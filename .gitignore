@@ -1,0 +1,4 @@
+*.psd
+*.pyc
++exclude.lst
+*.log
