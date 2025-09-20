@@ -1,0 +1,129 @@
+"""
+_____________________________________________________________________________________________
+
+  LGA_LC_CDL v0.1 | Lega
+  Updates OCIOCDLTransform nodes to use the script directory path for their file parameter
+_____________________________________________________________________________________________
+
+"""
+
+import nuke
+import os
+
+
+def update_ocio_cdl_nodes():
+    """
+    Actualiza los nodos OCIOCDLTransform seleccionados para usar archivos .cc desde la carpeta _input del proyecto
+    """
+
+    # Obtener nodos seleccionados
+    selected_nodes = nuke.selectedNodes()
+
+    # Verificar que haya nodos seleccionados
+    if not selected_nodes:
+        nuke.message("Debes seleccionar al menos un nodo OCIOCDLTransform.")
+        return
+
+    # Obtener la ruta del directorio del script actual
+    script_path = nuke.scriptName()
+    if not script_path:
+        nuke.message("El script no esta guardado. Por favor guarda el script primero.")
+        return
+
+    script_directory = os.path.dirname(script_path)
+    print(f"Directorio del script: {script_directory}")
+
+    # Buscar la carpeta _input subiendo 2 niveles desde el directorio del script
+    project_root = script_directory
+    # Subir 2 niveles desde el directorio del script
+    for _ in range(2):
+        project_root = os.path.dirname(project_root)
+
+    input_folder = os.path.join(project_root, "_input")
+    print(f"Buscando carpeta _input en: {input_folder}")
+
+    # Verificar si existe la carpeta _input
+    if not os.path.exists(input_folder):
+        nuke.message(f"No se encontro la carpeta _input en: {input_folder}")
+        return
+
+    # Buscar archivos .cc en la carpeta _input
+    cc_files = []
+    try:
+        for file in os.listdir(input_folder):
+            if file.lower().endswith(".cc"):
+                cc_files.append(os.path.join(input_folder, file))
+
+        if not cc_files:
+            nuke.message(f"No se encontraron archivos .cc en: {input_folder}")
+            return
+
+        # Usar el primer archivo .cc encontrado
+        selected_cc_file = cc_files[0]
+        print(f"Usando archivo CC: {selected_cc_file}")
+
+    except Exception as e:
+        nuke.message(f"Error al buscar archivos .cc: {str(e)}")
+        return
+
+    # Contadores para el reporte
+    processed_nodes = 0
+    updated_nodes = 0
+
+    # Procesar cada nodo seleccionado
+    for node in selected_nodes:
+        if node.Class() == "OCIOCDLTransform":
+            processed_nodes += 1
+
+            # Obtener la ruta actual del archivo
+            current_file = node["file"].value()
+
+            if current_file:
+                # Actualizar el nodo con el archivo .cc encontrado
+                node["file"].setValue(selected_cc_file)
+                updated_nodes += 1
+                print(
+                    f"Nodo '{node.name()}' actualizado: {current_file} -> {selected_cc_file}"
+                )
+            else:
+                # Si no tiene archivo, asignar el archivo .cc
+                node["file"].setValue(selected_cc_file)
+                updated_nodes += 1
+                print(f"Nodo '{node.name()}' asignado: {selected_cc_file}")
+
+    # Si se procesaron nodos OCIOCDLTransform exitosamente, buscar nodos GenerateLUT
+    if processed_nodes > 0:
+        print(
+            f"OCIOCDLTransform procesados: {processed_nodes}, actualizados: {updated_nodes}"
+        )
+
+        # Crear ruta del archivo .cube basados en el .cc encontrado (sin verificar si existe)
+        cube_file = selected_cc_file.replace(".cc", ".cube")
+        print(f"Configurando ruta CUBE para generacion: {cube_file}")
+
+        # Buscar nodos GenerateLUT entre los seleccionados
+        generatelut_nodes = 0
+        updated_generatelut = 0
+
+        for node in selected_nodes:
+            if node.Class() == "GenerateLUT":
+                generatelut_nodes += 1
+                # Configurar el archivo para generacion
+                node["file"].setValue(cube_file)
+                # Cambiar el file_type a .cube
+                node["file_type"].setValue(".cube")
+                updated_generatelut += 1
+                print(
+                    f"Nodo GenerateLUT '{node.name()}' configurado para generar: {cube_file}"
+                )
+
+        print(
+            f"GenerateLUT procesados: {generatelut_nodes}, configurados: {updated_generatelut}"
+        )
+    else:
+        print("No se procesaron nodos OCIOCDLTransform")
+
+
+# Llamar a la funcion si el script se ejecuta directamente
+if __name__ == "__main__":
+    update_ocio_cdl_nodes()
