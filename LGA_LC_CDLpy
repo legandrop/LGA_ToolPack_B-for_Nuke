@@ -1,8 +1,8 @@
 """
 _____________________________________________________________________________________________
 
-  LGA_LC_CDL v0.1 | Lega
-  Updates OCIOCDLTransform nodes to use the script directory path for their file parameter
+  LGA_LC_CDL v1.0 | Lega
+  No sirve para nada. Era para leer un .cc y generar un .cube. Pero es innecesario porque se puede leer el cc desde un OCIOFileTransform
 _____________________________________________________________________________________________
 
 """
@@ -98,8 +98,18 @@ def update_ocio_cdl_nodes():
         )
 
         # Crear ruta del archivo .cube basados en el .cc encontrado (sin verificar si existe)
-        cube_file = selected_cc_file.replace(".cc", ".cube")
-        print(f"Configurando ruta CUBE para generacion: {cube_file}")
+        # Usar os.path para manejar correctamente los separadores de ruta
+        file_name = os.path.basename(selected_cc_file)
+        file_name_cube = file_name.replace(".cc", ".cube")
+        cube_file = os.path.join(input_folder, file_name_cube)
+
+        # NORMALIZAR la ruta para Nuke (convertir \ a /)
+        cube_file_normalized = cube_file.replace("\\", "/")
+        input_folder_normalized = input_folder.replace("\\", "/")
+
+        print(f"Configurando ruta CUBE para generacion: {cube_file_normalized}")
+        print(f"Archivo CC original: {selected_cc_file}")
+        print(f"Directorio _input: {input_folder_normalized}")
 
         # Buscar nodos GenerateLUT entre los seleccionados
         generatelut_nodes = 0
@@ -108,18 +118,100 @@ def update_ocio_cdl_nodes():
         for node in selected_nodes:
             if node.Class() == "GenerateLUT":
                 generatelut_nodes += 1
-                # Configurar el archivo para generacion
-                node["file"].setValue(cube_file)
+                # Configurar el archivo para generacion (usar ruta normalizada)
+                cube_file_normalized = cube_file.replace("\\", "/")
+                node["file"].setValue(cube_file_normalized)
                 # Cambiar el file_type a .cube
                 node["file_type"].setValue(".cube")
                 updated_generatelut += 1
                 print(
-                    f"Nodo GenerateLUT '{node.name()}' configurado para generar: {cube_file}"
+                    f"Nodo GenerateLUT '{node.name()}' configurado para generar: {cube_file_normalized}"
                 )
+
+                # INTENTAR ejecutar la generacion del LUT usando diferentes metodos
+                try:
+                    print(f"Generando LUT automaticamente para '{node.name()}'...")
+
+                    # Metodo 1: Buscar knob de generacion (como "generate" o "write")
+                    lut_generated = False
+                    for knob_name in node.knobs():
+                        if (
+                            "generate" in knob_name.lower()
+                            or "write" in knob_name.lower()
+                        ):
+                            try:
+                                knob = node[knob_name]
+                                # Los knobs no tienen execute(), intentar obtener su valor
+                                try:
+                                    knob_value = knob.value()
+                                    print(
+                                        f"Knob '{knob_name}' ejecutado - valor: {knob_value}"
+                                    )
+                                    lut_generated = True
+                                    break
+                                except Exception as knob_exec_error:
+                                    print(
+                                        f"No se pudo ejecutar knob '{knob_name}': {str(knob_exec_error)}"
+                                    )
+                            except Exception as knob_error:
+                                print(
+                                    f"Error con knob '{knob_name}': {str(knob_error)}"
+                                )
+
+                    # Metodo 2: Si no funciono el knob, intentar nuke.execute
+                    if not lut_generated:
+                        current_frame = nuke.frame()
+                        nuke.execute(node, current_frame, current_frame)
+                        print(
+                            f"LUT generado exitosamente usando nuke.execute: {cube_file_normalized}"
+                        )
+
+                except Exception as e:
+                    print(f"Error al generar LUT automaticamente: {str(e)}")
+                    print(
+                        f"Puede generar el LUT manualmente presionando 'Generate and Write LUT File' en el nodo '{node.name()}'"
+                    )
 
         print(
             f"GenerateLUT procesados: {generatelut_nodes}, configurados: {updated_generatelut}"
         )
+
+        # PASO FINAL: Buscar nodos Vectorfield y configurarles el archivo .cube generado
+        if updated_generatelut > 0:
+            print(f"Configurando nodos Vectorfield con el LUT generado...")
+
+            # Buscar nodos Vectorfield entre los seleccionados
+            vectorfield_nodes = 0
+            updated_vectorfield = 0
+
+            for node in selected_nodes:
+                if node.Class() == "Vectorfield":
+                    vectorfield_nodes += 1
+                    # Configurar el archivo .cube generado
+                    node["vfield_file"].setValue(cube_file_normalized)
+                    # Configurar el file_type a cube
+                    node["file_type"].setValue("cube")
+                    updated_vectorfield += 1
+                    print(
+                        f"Nodo Vectorfield '{node.name()}' configurado con: {cube_file_normalized}"
+                    )
+
+            print(
+                f"Vectorfield procesados: {vectorfield_nodes}, configurados: {updated_vectorfield}"
+            )
+
+            # Resumen final
+            print(
+                """
+=== RESUMEN FINAL ==="""
+            )
+            print(f"OCIOCDLTransform: {updated_nodes} actualizados")
+            print(f"GenerateLUT: {updated_generatelut} configurados y generados")
+            print(f"Vectorfield: {updated_vectorfield} configurados")
+            print(f"Archivo generado: {cube_file_normalized}")
+        else:
+            print("No se configuraron nodos GenerateLUT")
+
     else:
         print("No se procesaron nodos OCIOCDLTransform")
 

@@ -1,7 +1,7 @@
 """
 _____________________________________
 
-  LGA_ToolPack v2.3 | Lega
+  LGA_ToolPack B v2.4 | Lega
   Colección de herramientas de Nuke
 _____________________________________
 
@@ -175,14 +175,23 @@ n2.addCommand("VA", lambda: None)
 icon_VA = _get_icon("TP_VA")
 
 
+# Importar el LGA_OCIOFileTransform_IP
+import LGA_OCIOFileTransform_IP
+
+n2.addCommand(
+    "  OCIOFileTransform Setup",
+    "LGA_OCIOFileTransform_IP.setup_ocio_file_transform()",
+    "ctrl+alt+shift+i",
+    shortcutContext=2,
+    icon=icon_VA,
+)
+
 # Importar el LGA_CDL_CC_IP
 import LGA_CDL_CC_IP
 
 n2.addCommand(
     "  CDL -> CC Input Process",
     "LGA_CDL_CC_IP.main()",
-    "ctrl+alt+shift+i",
-    shortcutContext=2,
     icon=icon_VA,
 )
 
