@@ -10,19 +10,26 @@ _______________________________________________
 import importlib.util
 import os
 
-# Import qt_compat desde el directorio ToolPack-B
-qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
-if os.path.exists(qt_compat_path):
-    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-    qt_compat = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(qt_compat)
-    QtWidgets = qt_compat.QtWidgets
-    QtGui = qt_compat.QtGui
-    QtCore = qt_compat.QtCore
-    horizontal_advance = qt_compat.horizontal_advance
-else:
+# Intentar importar qt_compat desde el directorio ToolPack-B (Nuke 16)
+# Si no existe, usar el import normal (Nuke 15)
+try:
+    qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+    if os.path.exists(qt_compat_path):
+        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+        qt_compat = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qt_compat)
+        QtWidgets = qt_compat.QtWidgets
+        QtGui = qt_compat.QtGui
+        QtCore = qt_compat.QtCore
+        horizontal_advance = qt_compat.horizontal_advance
+    else:
+        # Usar el del ToolPack original (Nuke 15)
+        from qt_compat import QtWidgets, QtGui, QtCore
+        horizontal_advance = lambda m, t: m.width(t)  # Fallback para Nuke 15
+except ImportError:
     # Fallback
-    from qt_compat import QtWidgets, QtGui, QtCore, horizontal_advance
+    from qt_compat import QtWidgets, QtGui, QtCore
+    horizontal_advance = lambda m, t: m.width(t)
 
 # Alias para mantener compatibilidad con el codigo existente
 QApplication = QtWidgets.QApplication

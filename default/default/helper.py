@@ -15,19 +15,28 @@ from . import templates
 
 import sys
 import os
-# Import qt_compat desde el directorio padre del ToolPack-B
-qt_compat_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'qt_compat.py')
-if os.path.exists(qt_compat_path):
-    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-    qt_compat = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(qt_compat)
-    QtWidgets = qt_compat.QtWidgets
-    QtCore = qt_compat.QtCore
-    QGuiApplication = qt_compat.QGuiApplication
-    primary_screen_geometry = qt_compat.primary_screen_geometry
-else:
-    # Fallback si no encuentra el archivo
-    from qt_compat import QtWidgets, QtCore, QGuiApplication, primary_screen_geometry
+import importlib.util
+
+# Intentar importar qt_compat desde el directorio ToolPack-B (Nuke 16)
+# Si no existe, usar el import normal (Nuke 15)
+try:
+    qt_compat_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'qt_compat.py')
+    if os.path.exists(qt_compat_path):
+        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+        qt_compat = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qt_compat)
+        QtWidgets = qt_compat.QtWidgets
+        QtCore = qt_compat.QtCore
+        QGuiApplication = qt_compat.QGuiApplication
+        primary_screen_geometry = qt_compat.primary_screen_geometry
+    else:
+        # Usar el del ToolPack original (Nuke 15)
+        from qt_compat import QtWidgets, QtCore, QGuiApplication
+        primary_screen_geometry = None  # No disponible en Nuke 15
+except ImportError:
+    # Fallback
+    from qt_compat import QtWidgets, QtCore, QGuiApplication
+    primary_screen_geometry = None
 
 
 def set_style_sheet(widget):
@@ -357,8 +366,19 @@ def center(widget):
     """
 
     frame_geo = widget.frameGeometry()
-    # Usar geometría de pantalla principal, más robusto que depender de widget.pos()
-    geo = primary_screen_geometry()
+
+    # Intentar usar primary_screen_geometry si está disponible (Nuke 16)
+    # Si no, usar QDesktopWidget (Nuke 15)
+    if primary_screen_geometry is not None:
+        geo = primary_screen_geometry()
+    else:
+        # Fallback para Nuke 15
+        try:
+            geo = QtWidgets.QDesktopWidget().availableGeometry()
+        except:
+            # Si tampoco está disponible, usar valores por defecto
+            geo = QtCore.QRect(0, 0, 1920, 1080)
+
     widget_center = geo.center()
     frame_geo.moveCenter(widget_center)
     widget.move(frame_geo.topLeft())

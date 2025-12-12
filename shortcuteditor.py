@@ -21,19 +21,26 @@ import nuke
 import os
 import importlib.util
 
-# Import qt_compat desde el directorio ToolPack-B
+# Intentar importar qt_compat desde el directorio ToolPack-B (para Nuke 16)
+# Si no existe, usar el import normal (para Nuke 15 que usa el del ToolPack original)
 qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
-if os.path.exists(qt_compat_path):
-    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-    qt_compat = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(qt_compat)
-    QtCore = qt_compat.QtCore
-    QtGui = qt_compat.QtGui
-    QtWidgets = qt_compat.QtWidgets
-    primary_screen_geometry = qt_compat.primary_screen_geometry
-else:
-    # Fallback
-    from qt_compat import QtCore, QtGui, QtWidgets, primary_screen_geometry
+try:
+    if os.path.exists(qt_compat_path):
+        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+        qt_compat = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qt_compat)
+        QtCore = qt_compat.QtCore
+        QtGui = qt_compat.QtGui
+        QtWidgets = qt_compat.QtWidgets
+        primary_screen_geometry = qt_compat.primary_screen_geometry
+    else:
+        # No existe qt_compat en ToolPack-B, usar el del ToolPack original (Nuke 15)
+        from qt_compat import QtCore, QtGui, QtWidgets, primary_screen_geometry
+except ImportError:
+    # Fallback final por si acaso
+    from qt_compat import QtCore, QtGui, QtWidgets
+    primary_screen_geometry = None  # No disponible en el fallback
+
 Qt = QtCore.Qt
 
 
@@ -691,7 +698,15 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         # Get cursor position, and screen dimensions on active screen
         cursor = QtGui.QCursor().pos()
-        screen = primary_screen_geometry(cursor)
+
+        if primary_screen_geometry is not None:
+            screen = primary_screen_geometry(cursor)
+        else:
+            # Fallback para Nuke 15
+            try:
+                screen = QtWidgets.QDesktopWidget().screenGeometry(cursor)
+            except:
+                screen = QtCore.QRect(0, 0, 1920, 1080)
 
         # Get window position so cursor is just over text input
         xpos = cursor.x() - (self.width()/2)

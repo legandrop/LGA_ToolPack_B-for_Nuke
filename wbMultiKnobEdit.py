@@ -16,16 +16,21 @@ import nuke
 import importlib.util
 import os
 
-# Import qt_compat desde el directorio ToolPack-B
-qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
-if os.path.exists(qt_compat_path):
-    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-    qt_compat = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(qt_compat)
-    QtGui = qt_compat.QtGui
-    QtCore = qt_compat.QtCore
-    QtWidgets = qt_compat.QtWidgets
-else:
+# Intentar importar qt_compat desde el directorio ToolPack-B (Nuke 16)
+# Si no existe, usar el import normal (Nuke 15)
+try:
+    qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+    if os.path.exists(qt_compat_path):
+        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+        qt_compat = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qt_compat)
+        QtGui = qt_compat.QtGui
+        QtCore = qt_compat.QtCore
+        QtWidgets = qt_compat.QtWidgets
+    else:
+        # Usar el del ToolPack original (Nuke 15)
+        from qt_compat import QtGui, QtCore, QtWidgets
+except ImportError:
     # Fallback
     from qt_compat import QtGui, QtCore, QtWidgets
 
