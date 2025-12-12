@@ -3,6 +3,7 @@
 
 # Import built-in modules
 import os
+import importlib.util
 from xml.etree import ElementTree
 
 # Import third-party modules
@@ -10,14 +11,23 @@ from xml.etree import ElementTree
 import nuke
 
 # Import local modules
-from default.default import templates
+from . import templates
 
-try:
-    from PySide2 import QtWidgets
-    from PySide2 import QtCore
-except ImportError:
-    from PySide import QtGui as QtWidgets
-    from PySide import QtCore
+import sys
+import os
+# Import qt_compat desde el directorio padre del ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtWidgets = qt_compat.QtWidgets
+    QtCore = qt_compat.QtCore
+    QGuiApplication = qt_compat.QGuiApplication
+    primary_screen_geometry = qt_compat.primary_screen_geometry
+else:
+    # Fallback si no encuentra el archivo
+    from qt_compat import QtWidgets, QtCore, QGuiApplication, primary_screen_geometry
 
 
 def set_style_sheet(widget):
@@ -148,7 +158,7 @@ def get_current_knob_defaults_xml():
     for child in settings_root.findall("set"):
         if child.get("name") == "presets_path":
             #presets_dir = child.text
-            presets_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Presets")
+            presets_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "presets")
 
         if child.get("name") == "cur_preset":
             cur_preset = child.text
@@ -347,7 +357,9 @@ def center(widget):
     """
 
     frame_geo = widget.frameGeometry()
-    widget_center = QtWidgets.QDesktopWidget().availableGeometry().center()
+    # Usar geometría de pantalla principal, más robusto que depender de widget.pos()
+    geo = primary_screen_geometry()
+    widget_center = geo.center()
     frame_geo.moveCenter(widget_center)
     widget.move(frame_geo.topLeft())
 

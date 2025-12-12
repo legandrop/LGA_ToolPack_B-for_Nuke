@@ -13,21 +13,27 @@
 
 
 import nuke
+import importlib.util
+import os
 
-try:
-    from PySide import QtGui, QtCore 
-    qt_dialog = QtGui.QDialog
-    qt_vbox_layout = QtGui.QVBoxLayout
-    qt_label = QtGui.QLabel
-    qt_application = QtGui.QApplication
-    qt_focus = QtGui.QFocusFrame
-except:
-    from PySide2 import QtGui, QtCore, QtWidgets
-    qt_dialog = QtWidgets.QDialog
-    qt_vbox_layout = QtWidgets.QVBoxLayout
-    qt_label = QtWidgets.QLabel
-    qt_application = QtWidgets.QApplication
-    qt_focus = QtWidgets.QFocusFrame
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtGui = qt_compat.QtGui
+    QtCore = qt_compat.QtCore
+    QtWidgets = qt_compat.QtWidgets
+else:
+    # Fallback
+    from qt_compat import QtGui, QtCore, QtWidgets
+
+qt_dialog = QtWidgets.QDialog
+qt_vbox_layout = QtWidgets.QVBoxLayout
+qt_label = QtWidgets.QLabel
+qt_application = QtWidgets.QApplication
+qt_focus = QtWidgets.QFocusFrame
 
 class toolStatusInfoMessage( qt_dialog ):
 

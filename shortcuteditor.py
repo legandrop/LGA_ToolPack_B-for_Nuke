@@ -19,19 +19,22 @@ __version__ = "1.2"
 
 import nuke
 import os
-try:
-    # Prefer Qt.py when available
-    from Qt import QtCore, QtGui, QtWidgets
-    from Qt.QtCore import Qt
-except ImportError:
-    try:
-        # PySide2 for default Nuke 11
-        from PySide2 import QtCore, QtGui, QtWidgets
-        from PySide2.QtCore import Qt
-    except ImportError:
-        # Or PySide for Nuke 10
-        from PySide import QtCore, QtGui, QtGui as QtWidgets
-        from PySide.QtCore import Qt
+import importlib.util
+
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtCore = qt_compat.QtCore
+    QtGui = qt_compat.QtGui
+    QtWidgets = qt_compat.QtWidgets
+    primary_screen_geometry = qt_compat.primary_screen_geometry
+else:
+    # Fallback
+    from qt_compat import QtCore, QtGui, QtWidgets, primary_screen_geometry
+Qt = QtCore.Qt
 
 
 class KeySequenceWidget(QtWidgets.QWidget):
@@ -688,7 +691,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         # Get cursor position, and screen dimensions on active screen
         cursor = QtGui.QCursor().pos()
-        screen = QtWidgets.QDesktopWidget().screenGeometry(cursor)
+        screen = primary_screen_geometry(cursor)
 
         # Get window position so cursor is just over text input
         xpos = cursor.x() - (self.width()/2)

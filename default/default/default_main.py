@@ -10,19 +10,25 @@ import xml.etree.ElementTree as et
 # Import third-party modules
 # pylint: disable=import-error
 import nuke
+import importlib.util
+import os
 
-try:
-    from PySide2 import QtWidgets
-    from PySide2 import QtGui
-    from PySide2 import QtCore
-except ImportError:
-    from PySide import QtGui as QtWidgets
-    from PySide import QtGui
-    from PySide import QtCore
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtWidgets = qt_compat.QtWidgets
+    QtGui = qt_compat.QtGui
+    QtCore = qt_compat.QtCore
+else:
+    # Fallback
+    from qt_compat import QtWidgets, QtGui, QtCore
 
 # Import local modules
-from default.default import helper
-from default.default import templates
+from . import helper
+from . import templates
 
 
 def create_default():

@@ -7,36 +7,51 @@ _______________________________________________
 
 """
 
-from PySide2.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QTextEdit,
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-)
-from PySide2.QtWidgets import (
-    QSpacerItem,
-    QSizePolicy,
-    QTableWidget,
-    QTableWidgetItem,
-    QDialog,
-    QVBoxLayout,
-    QHeaderView,
-    QFrame,
-)
-from PySide2.QtGui import QFontMetrics, QKeySequence, QColor
-from PySide2.QtCore import Qt
+import importlib.util
+import os
+
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtWidgets = qt_compat.QtWidgets
+    QtGui = qt_compat.QtGui
+    QtCore = qt_compat.QtCore
+    horizontal_advance = qt_compat.horizontal_advance
+else:
+    # Fallback
+    from qt_compat import QtWidgets, QtGui, QtCore, horizontal_advance
+
+# Alias para mantener compatibilidad con el codigo existente
+QApplication = QtWidgets.QApplication
+QWidget = QtWidgets.QWidget
+QVBoxLayout = QtWidgets.QVBoxLayout
+QLineEdit = QtWidgets.QLineEdit
+QPushButton = QtWidgets.QPushButton
+QTextEdit = QtWidgets.QTextEdit
+QCheckBox = QtWidgets.QCheckBox
+QHBoxLayout = QtWidgets.QHBoxLayout
+QLabel = QtWidgets.QLabel
+QSpacerItem = QtWidgets.QSpacerItem
+QSizePolicy = QtWidgets.QSizePolicy
+QTableWidget = QtWidgets.QTableWidget
+QTableWidgetItem = QtWidgets.QTableWidgetItem
+QDialog = QtWidgets.QDialog
+QHeaderView = QtWidgets.QHeaderView
+QFrame = QtWidgets.QFrame
+QFontMetrics = QtGui.QFontMetrics
+QKeySequence = QtGui.QKeySequence
+QColor = QtGui.QColor
+Qt = QtCore.Qt
 import nuke
 import re
 import os
 import configparser
 
 # Solo se necesita una instancia de QApplication por script
-app = QApplication.instance() or QApplication([])
+app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
 
 class SearchAndReplaceWidget(QWidget):
@@ -341,7 +356,8 @@ class SearchAndReplaceWidget(QWidget):
         # Calcular el ancho del texto mas largo
         fm = QFontMetrics(self.font())
         max_text_width = max(
-            [fm.width(node["file"].getValue()) for node in self.nodes] + [200],
+            [horizontal_advance(fm, node["file"].getValue()) for node in self.nodes]
+            + [200],
             default=0,
         )
         width = min(max_text_width * 2, 1600)  # Ancho maximo ajustado

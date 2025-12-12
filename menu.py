@@ -9,9 +9,77 @@ _____________________________________
 
 import nuke
 import nukescripts
-
-# Importar iconos de la carpeta icons
 import os
+import importlib
+import configparser
+import webbrowser
+
+
+# --- Config loader & helpers (igual que ToolPack) ----------------------------
+
+
+def _ini_paths():
+    home = os.path.expanduser("~")
+    user_ini = os.path.join(home, ".nuke", "_LGA_ToolPack-B_Enabled.ini")
+    pkg_ini = os.path.join(os.path.dirname(__file__), "_LGA_ToolPack-B_Enabled.ini")
+    return user_ini, pkg_ini
+
+
+_TOOL_FLAGS = None
+
+
+def load_tool_flags():
+    """Lee el INI (user pisa a package). Si falta/rompe => todo True."""
+    global _TOOL_FLAGS
+    if _TOOL_FLAGS is not None:
+        return _TOOL_FLAGS
+
+    cfg = configparser.ConfigParser()
+    cfg.optionxform = str
+    user_ini, pkg_ini = _ini_paths()
+    read_ok = False
+    for path in [pkg_ini, user_ini]:
+        if os.path.isfile(path):
+            try:
+                cfg.read(path, encoding="utf-8")
+                read_ok = True
+            except Exception:
+                pass
+
+    flags = {}
+    if read_ok and cfg.has_section("Tools"):
+        for key, val in cfg.items("Tools"):
+            v = str(val).strip().lower()
+            flags[key] = v in ("1", "true", "yes", "on")
+    _TOOL_FLAGS = flags
+    return _TOOL_FLAGS
+
+
+def is_enabled(key: str) -> bool:
+    return load_tool_flags().get(key, True)
+
+
+def add_tool(menu, label, key, module, attr, shortcut=None, icon=None, context=2):
+    """Registra una tool si está habilitada. Import lazy."""
+    if not is_enabled(key):
+        nuke.warning(f"Tool disabled: {key}")
+        return
+
+    def _runner():
+        # Sin try/except para que falle si hay error
+        m = importlib.import_module(module)
+        func = getattr(m, attr)
+        return func()
+
+    kwargs = {}
+    if shortcut:
+        kwargs["shortcut"] = shortcut
+    if icon:
+        kwargs["icon"] = icon
+    if context is not None:
+        kwargs["shortcutContext"] = context
+
+    menu.addCommand(label, _runner, **kwargs)
 
 
 def _get_icon(name):
@@ -20,97 +88,87 @@ def _get_icon(name):
     return path.replace("\\", "/")
 
 
-# Crea el menu "TP2" (ToolPack)
+# Crea el menu "TP2" (ToolPack-B)
 n2 = nuke.menu("Nuke").addMenu("TP2", icon=_get_icon("LGA2"))
 
 
 # -----------------------------------------------------------------------------
 #                              READ n WRITE TOOLS
 # -----------------------------------------------------------------------------
-# Agrega el comando "READ n WRITE" al menu "TP" y "TP2"
 n2.addCommand("READ n WRITE", lambda: None)
-# Define el icono para los items de Read n Write
 icon_RnW = _get_icon("TP_RnW")
 
-
-# Importar el LGA_mediaMissingFrames
-import LGA_mediaMissingFrames
-
-n2.addCommand(
-    "  Media Missing Frames",
-    "LGA_mediaMissingFrames.main()",
-    "ctrl+alt+shift+m",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  Media Missing Frames",
+    key="Media_Missing_Frames",
+    module="LGA_mediaMissingFrames",
+    attr="main",
+    shortcut="ctrl+alt+shift+m",
     icon=icon_RnW,
+    context=2,
 )
 
-
-# Importar el LGA_reloadAllReads
-import LGA_reloadAllReads
-
-n2.addCommand(
-    "  Reload all Reads",
-    "LGA_reloadAllReads.main()",
-    "ctrl+alt+shift+r",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  Reload all Reads",
+    key="Reload_All_Reads",
+    module="LGA_reloadAllReads",
+    attr="main",
+    shortcut="ctrl+alt+shift+r",
     icon=icon_RnW,
+    context=2,
 )
 
-
-# Importar el LGA_renameWritesFromReads
-import LGA_renameWritesFromReads
-
-n2.addCommand(
-    "  Rename Writes from Reads",
-    "LGA_renameWritesFromReads.renameWrite()",
-    "F2",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  Rename Writes from Reads",
+    key="Rename_Writes_From_Reads",
+    module="LGA_renameWritesFromReads",
+    attr="renameWrite",
+    shortcut="F2",
     icon=icon_RnW,
+    context=2,
 )
 
 
 # -----------------------------------------------------------------------------
 #                              FRAME RANGE TOOLS
 # -----------------------------------------------------------------------------
-# Crear separador
 n2.addSeparator()
 n2.addCommand("FRAME RANGE", lambda: None)
-# Define el icono para los items de Frame Range
 icon_FR = _get_icon("TP_FR")
 
-
-# Importar el LGA_fr_Read_to_FrameRange
-import LGA_fr_Read_to_FrameRange
-
-n2.addCommand(
-    "  Read -> FrameRange",
-    "LGA_fr_Read_to_FrameRange.set_frame_range_from_read()",
-    "ctrl+alt+f",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  Read -> FrameRange",
+    key="FR_Read_to_FrameRange",
+    module="LGA_fr_Read_to_FrameRange",
+    attr="set_frame_range_from_read",
+    shortcut="ctrl+alt+f",
     icon=icon_FR,
+    context=2,
 )
 
-
-# Importar el LGA_fr_Read_to_Write
-import LGA_fr_Read_to_Write
-
-n2.addCommand(
-    "  Read -> Write",
-    "LGA_fr_Read_to_Write.Writes_FrameRange()",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  Read -> Write",
+    key="FR_Read_to_Write",
+    module="LGA_fr_Read_to_Write",
+    attr="Writes_FrameRange",
     icon=icon_FR,
+    context=2,
 )
 
-
-# Importar el LGA_fr_TimeClip_to_Write
-import LGA_fr_TimeClip_to_Write
-
-n2.addCommand(
-    "  TimeClip -> Write",
-    "LGA_fr_TimeClip_to_Write.set_write_from_timeclip()",
-    "ctrl+t",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  TimeClip -> Write",
+    key="FR_TimeClip_to_Write",
+    module="LGA_fr_TimeClip_to_Write",
+    attr="set_write_from_timeclip",
+    shortcut="ctrl+t",
     icon=icon_FR,
+    context=2,
 )
 
 
@@ -120,112 +178,106 @@ n2.addCommand(
 n2.addCommand("NODE BUILDS", lambda: None)
 icon_Knobs = _get_icon("TP_Knobs")
 
-# Importar el LGA_DasGrain_Kronos_Comp
-import LGA_DasGrain_Kronos_Comp
-
-n2.addCommand(
-    "  DasGrain Kronos Comp", "LGA_DasGrain_Kronos_Comp.main()", icon=icon_Knobs
-)
-
-# Importar el animation maker
-import AnimationMaker
-
-n2.addCommand(
-    "  Animation Maker",
-    lambda: nuke.message("Right click on any knob and select Animation Maker"),
+add_tool(
+    n2,
+    label="  DasGrain Kronos Comp",
+    key="DasGrain_Kronos_Comp",
+    module="LGA_DasGrain_Kronos_Comp",
+    attr="main",
     icon=icon_Knobs,
 )
 
+if is_enabled("AnimationMaker"):
+    # No llama UI aquí, solo mensaje corto como estaba
+    n2.addCommand(
+        "  Animation Maker",
+        lambda: nuke.message(
+            "Right click on any knob and select Animation Maker"
+        ),
+        icon=icon_Knobs,
+    )
 
-# Importar el MultiKnobTool con shortcut F12
-import wbMultiKnobEdit
-
-n2.addCommand(
-    "  Multi Knob Edit", "wbMultiKnobEdit.multiEditExec()", "F12", icon=icon_Knobs
+add_tool(
+    n2,
+    label="  Multi Knob Edit",
+    key="MultiKnobEdit",
+    module="wbMultiKnobEdit",
+    attr="multiEditExec",
+    shortcut="F12",
+    icon=icon_Knobs,
 )
 
+if is_enabled("Default_KnobDefaults"):
+    # Sin try/except para que falle si hay error
+    from default.default import default_main, helper
 
-# Importar Default (para definir los valores por defecto de los Nodos)
-from default.default import default_main
-from default.default import helper
-from default.default import about
-
-n2.addCommand(
-    "  Edit Default Knobs Values", default_main.show_defaults_window, icon=icon_Knobs
-)
-# Add commands to animation menu.
-nuke.menu("Animation").addCommand(
-    "default/set as new knobDefault", "default_main.create_default()"
-)
-nuke.menu("Animation").addCommand(
-    "default/show knob list", "default_main.show_knob_list()"
-)
-nuke.menu("Animation").addCommand("default/reset", "default_main.reset_to_default()")
-# Auto load knob defaults when launching.
-helper.load_knob_defaults(init=True)
+    n2.addCommand(
+        "  Edit Default Knobs Values",
+        default_main.show_defaults_window,
+        icon=icon_Knobs,
+    )
+    nuke.menu("Animation").addCommand(
+        "default/set as new knobDefault", "default_main.create_default()"
+    )
+    nuke.menu("Animation").addCommand(
+        "default/show knob list", "default_main.show_knob_list()"
+    )
+    nuke.menu("Animation").addCommand(
+        "default/reset", "default_main.reset_to_default()"
+    )
+    helper.load_knob_defaults(init=True)
 
 
 # -----------------------------------------------------------------------------
 #                                 VA TOOLS
 # -----------------------------------------------------------------------------
-# Crea separador y titulo
 n2.addSeparator()
 n2.addCommand("VA", lambda: None)
-# Define el icono para los items de Frame Range
 icon_VA = _get_icon("TP_VA")
 
+add_tool(
+    n2,
+    label="  OCIOFileTransform Setup",
+    key="OCIOFileTransform_IP",
+    module="LGA_OCIOFileTransform_IP",
+    attr="setup_ocio_file_transform",
+    shortcut="ctrl+alt+shift+i",
+    icon=icon_VA,
+    context=2,
+)
 
-# Importar el LGA_OCIOFileTransform_IP
-import LGA_OCIOFileTransform_IP
-
-n2.addCommand(
-    "  OCIOFileTransform Setup",
-    "LGA_OCIOFileTransform_IP.setup_ocio_file_transform()",
-    "ctrl+alt+shift+i",
-    shortcutContext=2,
+add_tool(
+    n2,
+    label="  CDL -> CC Input Process",
+    key="CDL_CC_IP",
+    module="LGA_CDL_CC_IP",
+    attr="main",
     icon=icon_VA,
 )
 
-# Importar el LGA_CDL_CC_IP
-import LGA_CDL_CC_IP
+if is_enabled("Perf_Time"):
+    # Sin try/except para que falle si hay error
+    import perf_time
 
-n2.addCommand(
-    "  CDL -> CC Input Process",
-    "LGA_CDL_CC_IP.main()",
-    icon=icon_VA,
-)
-
-
-# Importar Performance timers en el menu TP y como un Panel
-import perf_time
-
-n2.addCommand("  Performance Timers", "perf_time.show_panel()", icon=icon_VA)
-pane_m = nuke.menu("Pane")
-pane_m.addCommand("Performance Timers", perf_time.add_perf_time_panel)
-nukescripts.registerPanel("com.lega.perfTime", perf_time.add_perf_time_panel)
+    n2.addCommand("  Performance Timers", "perf_time.show_panel()", icon=icon_VA)
+    pane_m = nuke.menu("Pane")
+    pane_m.addCommand("Performance Timers", perf_time.add_perf_time_panel)
+    nukescripts.registerPanel("com.lega.perfTime", perf_time.add_perf_time_panel)
 
 
-# Importar el shortcut editor
-try:
+if is_enabled("Shortcut_Editor"):
+    # Sin try/except para que falle si hay error
     import shortcuteditor
+    from shortcuteditor import gui
 
     shortcuteditor.nuke_setup()
-except Exception:
-    import traceback
-
-    traceback.print_exc()
-from shortcuteditor import gui
-
-n2.addCommand("  Edit Keyboard Shortcuts", gui, icon=icon_VA)
+    n2.addCommand("  Edit Keyboard Shortcuts", gui, icon=icon_VA)
 
 
 # -----------------------------------------------------------------------------
 #                                 Version
 # -----------------------------------------------------------------------------
-# Crea separador y titulo
 n2.addSeparator()
-import webbrowser
-import nuke
 
 TPB_script_dir = os.path.dirname(os.path.realpath(__file__))
 TPB_pdf_path = os.path.join(TPB_script_dir, "LGA_ToolPack-B.pdf")

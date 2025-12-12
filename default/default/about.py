@@ -7,15 +7,23 @@ import webbrowser
 # Import third-party modules
 # pylint: disable=import-error
 import nuke
+import importlib.util
+import os
 
-try:
-    from PySide2 import QtWidgets
-except ImportError:
-    from PySide import QtGui as QtWidgets
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtWidgets = qt_compat.QtWidgets
+else:
+    # Fallback
+    from qt_compat import QtWidgets
 
 # Import local modules
-from default.default import info
-from default.default import helper
+from . import info
+from . import helper
 
 
 class AboutWindow(QtWidgets.QDialog):

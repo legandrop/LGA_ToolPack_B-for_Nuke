@@ -28,17 +28,21 @@
 
 
 import nuke
+import importlib.util
+import os
 
-try:
-    # < Nuke 11
-    import PySide.QtCore as QtCore
-    import PySide.QtGui as QtGui
-    import PySide.QtGui as QtGuiWidgets
-except:
-    # >= Nuke 11
-    import PySide2.QtCore as QtCore
-    import PySide2.QtGui as QtGui
-    import PySide2.QtWidgets as QtGuiWidgets
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtGuiWidgets = qt_compat.QtWidgets
+    QtGui = qt_compat.QtGui
+    QtCore = qt_compat.QtCore
+else:
+    # Fallback
+    from qt_compat import QtWidgets as QtGuiWidgets, QtGui, QtCore
 
 import random
 import time

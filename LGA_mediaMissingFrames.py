@@ -7,19 +7,34 @@ ________________________________________________________________________________
 
 """
 
-from PySide2.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-)
-from PySide2.QtGui import QScreen
-from PySide2.QtCore import Qt
-import nuke
+import importlib.util
 import os
+
+# Import qt_compat desde el directorio ToolPack-B
+qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+if os.path.exists(qt_compat_path):
+    spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
+    qt_compat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(qt_compat)
+    QtWidgets = qt_compat.QtWidgets
+    QtGui = qt_compat.QtGui
+    QtCore = qt_compat.QtCore
+else:
+    # Fallback
+    from qt_compat import QtWidgets, QtGui, QtCore
+
+# Alias para mantener compatibilidad con el codigo existente
+QApplication = QtWidgets.QApplication
+QWidget = QtWidgets.QWidget
+QVBoxLayout = QtWidgets.QVBoxLayout
+QTableWidget = QtWidgets.QTableWidget
+QTableWidgetItem = QtWidgets.QTableWidgetItem
+QHeaderView = QtWidgets.QHeaderView
+QScreen = QtGui.QScreen
+Qt = QtCore.Qt
+import nuke
 import re
+import sys
 
 
 class ReadNodeInfo(QWidget):
