@@ -7,10 +7,17 @@ from typing import Optional
 try:  # PySide6 primero (Nuke 16)
     from PySide6 import QtWidgets, QtGui, QtCore
     from PySide6.QtGui import QAction, QGuiApplication
+
     PYSIDE_VER = 6
 except ImportError:  # PySide2 (Nuke 15)
     from PySide2 import QtWidgets, QtGui, QtCore
-    from PySide2.QtGui import QAction, QGuiApplication
+
+    try:
+        from PySide2.QtGui import QAction  # Qt5 a veces lo expone aqui
+    except ImportError:
+        from PySide2.QtWidgets import QAction  # fallback QtWidgets
+    from PySide2.QtGui import QGuiApplication
+
     PYSIDE_VER = 2
 
 
