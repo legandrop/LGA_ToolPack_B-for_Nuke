@@ -188,7 +188,9 @@ add_tool(
 )
 
 if is_enabled("AnimationMaker"):
-    # No llama UI aquí, solo mensaje corto como estaba
+    # Importar AnimationMaker para que se registre el menú contextual
+    import AnimationMaker
+
     n2.addCommand(
         "  Animation Maker",
         lambda: nuke.message(
