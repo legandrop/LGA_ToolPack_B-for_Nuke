@@ -1,7 +1,8 @@
 # Plan de migración Nuke 15 → Nuke 16 (PySide2 → PySide6) — ToolPack-B
 
 ## Estrategia
-- Usar helper de compatibilidad (`qt_compat` ya usado en ToolPack/ToolPack-Layout) con fallback PySide6 → PySide2 y alias de QtWidgets/QtGui/QtCore/QAction/QGuiApplication.
+- Usar helper de compatibilidad (`qt_compat.py`) con funciones helper avanzadas y fallback PySide6 → PySide2.
+- Funciones helper automatizan cambios de API: `horizontal_advance()`, `primary_screen_geometry()`, `set_layout_margin()`.
 - Sustituir APIs Qt5 deprecadas: `QDesktopWidget`, `QFontMetrics.width`, `QtGui.QWidget` legacy, mezclas QtGui/QtWidgets.
 - Mantener compatibilidad Nuke 15/16 con imports protegidos (`try/except`) o helper único.
 
@@ -21,7 +22,8 @@
 - `LGA_OCIOFileTransform_IP.py`, `LGA_reloadAllReads.py`, `LGA_renameWritesFromReads.py`
 
 ## Notas rápidas
-- Reutilizar el mismo `qt_compat.py` ya presente en ToolPack/ToolPack-Layout.
-- Reemplazar `QDesktopWidget` por `QGuiApplication.primaryScreen()` y `screenAt(pos) or primaryScreen()`; usar `availableGeometry()` sin argumentos en Qt6.
-- Cambiar `QFontMetrics.width` → `horizontalAdvance` con fallback.
-- Garantizar una sola instancia de `QApplication` (AnimationMaker, mediaMissingFrames, mediaPathReplacer).***
+- `qt_compat.py` incluye funciones helper avanzadas unificadas en todos los ToolPacks.
+- Para geometría de pantalla usar `qt_compat.primary_screen_geometry(pos)` (maneja automáticamente QDesktopWidget vs QGuiApplication).
+- Para ancho de texto usar `qt_compat.horizontal_advance(metrics, text)` (compatible Qt5/Qt6 automáticamente).
+- Para márgenes de layout usar `qt_compat.set_layout_margin(layout, margin)` (compatible Qt5/Qt6 automáticamente).
+- Garantizar una sola instancia de `QApplication` (AnimationMaker, mediaMissingFrames, mediaPathReplacer).
