@@ -10,23 +10,23 @@ ________________________________________________________________________________
 import importlib.util
 import os
 
-# Intentar importar qt_compat desde el directorio ToolPack-B (Nuke 16)
+# Intentar importar LGA_QtAdapter_ToolPackB desde el directorio ToolPack-B (Nuke 16)
 # Si no existe, usar el import normal (Nuke 15)
 try:
-    qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
-    if os.path.exists(qt_compat_path):
-        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-        qt_compat = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(qt_compat)
-        QtWidgets = qt_compat.QtWidgets
-        QtGui = qt_compat.QtGui
-        QtCore = qt_compat.QtCore
+    LGA_QtAdapter_ToolPackB_path = os.path.join(os.path.dirname(__file__), 'LGA_QtAdapter_ToolPackB.py')
+    if os.path.exists(LGA_QtAdapter_ToolPackB_path):
+        spec = importlib.util.spec_from_file_location("LGA_QtAdapter_ToolPackB", LGA_QtAdapter_ToolPackB_path)
+        LGA_QtAdapter_ToolPackB = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(LGA_QtAdapter_ToolPackB)
+        QtWidgets = LGA_QtAdapter_ToolPackB.QtWidgets
+        QtGui = LGA_QtAdapter_ToolPackB.QtGui
+        QtCore = LGA_QtAdapter_ToolPackB.QtCore
     else:
         # Usar el del ToolPack original (Nuke 15)
-        from qt_compat import QtWidgets, QtGui, QtCore
+        from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore
 except ImportError:
     # Fallback
-    from qt_compat import QtWidgets, QtGui, QtCore
+    from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore
 
 # Alias para mantener compatibilidad con el codigo existente
 QApplication = QtWidgets.QApplication

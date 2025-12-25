@@ -21,24 +21,24 @@ import nuke
 import os
 import importlib.util
 
-# Intentar importar qt_compat desde el directorio ToolPack-B (para Nuke 16)
+# Intentar importar LGA_QtAdapter_ToolPackB desde el directorio ToolPack-B (para Nuke 16)
 # Si no existe, usar el import normal (para Nuke 15 que usa el del ToolPack original)
-qt_compat_path = os.path.join(os.path.dirname(__file__), 'qt_compat.py')
+LGA_QtAdapter_ToolPackB_path = os.path.join(os.path.dirname(__file__), 'LGA_QtAdapter_ToolPackB.py')
 try:
-    if os.path.exists(qt_compat_path):
-        spec = importlib.util.spec_from_file_location("qt_compat", qt_compat_path)
-        qt_compat = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(qt_compat)
-        QtCore = qt_compat.QtCore
-        QtGui = qt_compat.QtGui
-        QtWidgets = qt_compat.QtWidgets
-        primary_screen_geometry = qt_compat.primary_screen_geometry
+    if os.path.exists(LGA_QtAdapter_ToolPackB_path):
+        spec = importlib.util.spec_from_file_location("LGA_QtAdapter_ToolPackB", LGA_QtAdapter_ToolPackB_path)
+        LGA_QtAdapter_ToolPackB = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(LGA_QtAdapter_ToolPackB)
+        QtCore = LGA_QtAdapter_ToolPackB.QtCore
+        QtGui = LGA_QtAdapter_ToolPackB.QtGui
+        QtWidgets = LGA_QtAdapter_ToolPackB.QtWidgets
+        primary_screen_geometry = LGA_QtAdapter_ToolPackB.primary_screen_geometry
     else:
-        # No existe qt_compat en ToolPack-B, usar el del ToolPack original (Nuke 15)
-        from qt_compat import QtCore, QtGui, QtWidgets, primary_screen_geometry
+        # No existe LGA_QtAdapter_ToolPackB en ToolPack-B, usar el del ToolPack original (Nuke 15)
+        from LGA_QtAdapter_ToolPackB import QtCore, QtGui, QtWidgets, primary_screen_geometry
 except ImportError:
     # Fallback final por si acaso
-    from qt_compat import QtCore, QtGui, QtWidgets
+    from LGA_QtAdapter_ToolPackB import QtCore, QtGui, QtWidgets
     primary_screen_geometry = None  # No disponible en el fallback
 
 Qt = QtCore.Qt
