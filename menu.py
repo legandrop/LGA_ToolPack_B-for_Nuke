@@ -180,8 +180,59 @@ add_tool(
 
 
 # -----------------------------------------------------------------------------
+#                              COPY n PASTE TOOLS
+# -----------------------------------------------------------------------------
+n2.addSeparator()
+n2.addCommand("COPY n PASTE", lambda: None)
+icon_CnP = _get_icon("TP_CnP")
+
+add_tool(
+    n2,
+    label="  Paste To Selected",
+    key="Paste_To_Selected",
+    module="pasteToSelected",
+    attr="pasteToSelected",
+    shortcut="ctrl+shift+v",
+    icon=icon_CnP,
+    context=2,
+)
+
+add_tool(
+    n2,
+    label="  Copy with inputs",
+    key="Copy_with_inputs",
+    module="duplicateWithInputs",
+    attr="copyWithInputs",
+    shortcut="ctrl+alt+c",
+    icon=icon_CnP,
+    context=2,
+)
+add_tool(
+    n2,
+    label="  Paste with inputs",
+    key="Paste_with_inputs",
+    module="duplicateWithInputs",
+    attr="pasteWithInputs",
+    shortcut="ctrl+alt+v",
+    icon=icon_CnP,
+    context=2,
+)
+add_tool(
+    n2,
+    label="  Duplicate with inputs",
+    key="Duplicate_with_inputs",
+    module="duplicateWithInputs",
+    attr="duplicateWithInputs",
+    shortcut="ctrl+alt+k",
+    icon=icon_CnP,
+    context=2,
+)
+
+
+# -----------------------------------------------------------------------------
 #                                 NODE BUILDS
 # -----------------------------------------------------------------------------
+n2.addSeparator()
 n2.addCommand("NODE BUILDS", lambda: None)
 icon_Knobs = _get_icon("TP_Knobs")
 

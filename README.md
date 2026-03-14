@@ -124,6 +124,46 @@ La herramienta requiere seleccionar exactamente un Write y un TimeClip.
 
 <br><br>
 
+## <span style="color:#4dcb9d;">COPY n PASTE</span>
+
+## <img src="Doc_Media/image18.png" alt="" width="7" height="12"> Paste to selected v1.1 - Frank Rueter | *Ctrl + Shift + V*
+
+[http://www.nukepedia.com/python/nodegraph/pastetoselected](http://www.nukepedia.com/python/nodegraph/pastetoselected)
+
+Pega los nodos del portapapeles a todos los nodos seleccionados.
+
+![](Doc_Media/image30.png)
+
+![](Doc_Media/image26.png)
+
+
+
+
+
+<br><br>
+
+## <img src="Doc_Media/image18.png" alt="" width="7" height="12"> Duplicate with inputs v1.3 - Marcel Pichert
+
+[http://www.nukepedia.com/python/nodegraph/duplicate-with-inputs](http://www.nukepedia.com/python/nodegraph/duplicate-with-inputs)
+
+Duplica los nodos seleccionados y mantiene todas sus conexiones con nodos que no están en la selección. Se pueden duplicar los nodos directamente o copiarlos primero y pegarlos en otro lugar del script más tarde.
+
+![](Doc_Media/image20.png)
+
+![](Doc_Media/image10.png)
+
+
+
+**Shortcut**
+
+Ctrl + Alt + C Copy with inputs
+
+Ctrl + Alt + V Paste with inputs
+
+Ctrl + Alt + K Duplicate with inputs
+
+<br><br>
+
 ## <span style="color:#cb944d;">NODE BUILDS</span>
 
 Esta sección agrupa herramientas para construir setups, editar knobs o acelerar tareas repetitivas dentro del script.
@@ -222,6 +262,35 @@ Abre una interfaz para revisar y editar shortcuts del menú de Nuke.
 
 La herramienta se integra al arranque del ToolPack-B y permite redefinir teclas sin editar manualmente `menu.py`.
 
+
+
+
+
+<br><br>
+
+## Referencias técnicas
+
+- [/Users/leg4/.nuke/LGA_ToolPack-B/menu.py](/Users/leg4/.nuke/LGA_ToolPack-B/menu.py): `load_tool_flags()`, `is_enabled()`, `add_tool()`, registro del menú `TP2` y agrupación por categorías.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/_LGA_ToolPack-B_Enabled.ini](/Users/leg4/.nuke/LGA_ToolPack-B/_LGA_ToolPack-B_Enabled.ini): flags de activación y desactivación por herramienta.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_mediaMissingFrames.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_mediaMissingFrames.py): clase `ReadNodeInfo`, métodos `load_data()` y `adjust_window_size()`, entrada `main()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_reloadAllReads.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_reloadAllReads.py): función `main()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_renameWritesFromReads.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_renameWritesFromReads.py): función `renameWrite()`, helpers `get_file_name_without_extension()`, `remove_padding()`, `find_top_read_node()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_mediaPathReplacer.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_mediaPathReplacer.py): UI principal del buscador/reemplazador de paths y manejo de presets.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_Read_to_FrameRange.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_Read_to_FrameRange.py): función `set_frame_range_from_read()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_Read_to_Write.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_Read_to_Write.py): función `Writes_FrameRange()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_TimeClip_to_Write.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_fr_TimeClip_to_Write.py): función `set_write_from_timeclip()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/pasteToSelected.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/pasteToSelected.py): función `pasteToSelected()` y helper `toggleSelection()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/duplicateWithInputs.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/duplicateWithInputs.py): funciones `copyWithInputs()`, `pasteWithInputs()` y `duplicateWithInputs()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_DasGrain_Kronos_Comp.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_DasGrain_Kronos_Comp.py): funciones `add_amount_knobs()` y `main()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/AnimationMaker.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/AnimationMaker.py): `showWindow()`, `remove_tab()` y registro de menú contextual para knobs animables.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/wbMultiKnobEdit.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/wbMultiKnobEdit.py): función `multiEditExec()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/default/default/default_main.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/default/default/default_main.py): `show_defaults_window()`, `create_default()`, `show_knob_list()`, `reset_to_default()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/default/default/helper.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/default/default/helper.py): `load_knob_defaults()` y helpers del sistema de defaults.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_OCIOFileTransform_IP.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_OCIOFileTransform_IP.py): función `setup_ocio_file_transform()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_CDL_CC_IP.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_CDL_CC_IP.py): función `main()`, `read_cdl_values()` y generación de archivo `.cc`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/perf_time.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/perf_time.py): clase `PerfTime`, funciones `show_panel()` y `add_perf_time_panel()`.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/shortcuteditor.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/shortcuteditor.py): `nuke_setup()`, `gui()` y widgets del editor de shortcuts.
+- [/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_QtAdapter_ToolPackB.py](/Users/leg4/.nuke/LGA_ToolPack-B/py/LGA_QtAdapter_ToolPackB.py): compatibilidad Qt entre Nuke 15 y Nuke 16, helpers `primary_screen_geometry()`, `horizontal_advance()` y `set_layout_margin()`.
 
 
 
