@@ -14,6 +14,13 @@ import importlib
 import configparser
 import webbrowser
 
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+PY_DIR = os.path.join(ROOT_DIR, "py")
+DOCS_DIR = os.path.join(ROOT_DIR, "docs")
+
+# Carga los modulos runtime desde py/
+nuke.pluginAddPath(PY_DIR.replace("\\", "/"))
+
 
 # --- Config loader & helpers (igual que ToolPack) ----------------------------
 
@@ -21,7 +28,7 @@ import webbrowser
 def _ini_paths():
     home = os.path.expanduser("~")
     user_ini = os.path.join(home, ".nuke", "_LGA_ToolPack-B_Enabled.ini")
-    pkg_ini = os.path.join(os.path.dirname(__file__), "_LGA_ToolPack-B_Enabled.ini")
+    pkg_ini = os.path.join(ROOT_DIR, "_LGA_ToolPack-B_Enabled.ini")
     return user_ini, pkg_ini
 
 
@@ -83,7 +90,7 @@ def add_tool(menu, label, key, module, attr, shortcut=None, icon=None, context=2
 
 
 def _get_icon(name):
-    icons_root = os.path.join(os.path.dirname(__file__), "icons")
+    icons_root = os.path.join(PY_DIR, "icons")
     path = os.path.join(icons_root, name) + ".png"
     return path.replace("\\", "/")
 
@@ -281,7 +288,6 @@ if is_enabled("Shortcut_Editor"):
 # -----------------------------------------------------------------------------
 n2.addSeparator()
 
-TPB_script_dir = os.path.dirname(os.path.realpath(__file__))
-TPB_pdf_path = os.path.join(TPB_script_dir, "LGA_ToolPack-B.pdf")
+TPB_pdf_path = os.path.join(DOCS_DIR, "LGA_ToolPack-B.pdf")
 
 n2.addCommand("Documentation v2.3", lambda: webbrowser.open("file://" + TPB_pdf_path))
