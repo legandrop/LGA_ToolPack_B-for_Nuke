@@ -348,6 +348,7 @@ if is_enabled("Shortcut_Editor"):
 # -----------------------------------------------------------------------------
 n2.addSeparator()
 
-TPB_pdf_path = os.path.join(DOCS_DIR, "LGA_ToolPack-B.pdf")
-
-n2.addCommand("Documentation v2.3", lambda: webbrowser.open("file://" + TPB_pdf_path))
+n2.addCommand(
+    "Documentation v1.01",
+    lambda: webbrowser.open("https://github.com/legandrop/LGA_ToolPack_B-for_Nuke"),
+)
