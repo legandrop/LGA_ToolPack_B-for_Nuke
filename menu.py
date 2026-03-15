@@ -138,6 +138,15 @@ add_tool(
     context=2,
 )
 
+add_tool(
+    n2,
+    label="  CopyCat Cleaner",
+    key="CopyCat_Cleaner",
+    module="LGA_CopyCat_Cleaner",
+    attr="run_copycat_cleaner",
+    icon=icon_RnW,
+)
+
 
 # -----------------------------------------------------------------------------
 #                              FRAME RANGE TOOLS

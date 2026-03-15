@@ -74,6 +74,15 @@ Permite buscar y reemplazar rutas en los nodos Read y Write. Da la opción de fi
 
 
 <br><br>
+## <img src="Doc_Media/image7.png" alt="" width="6" height="16" style="margin-right:3px;"> CopyCat Cleaner v1.0 | Lega
+
+Analiza todos los nodos Inference del script, compara el modelo .cat usado con el más reciente disponible en su carpeta y permite limpiar versiones antiguas junto con sus imágenes de entrenamiento.<br>
+Muestra los resultados en una tabla con estado (Match / Outdated / Missing) y un botón Clean para mover los archivos no usados a una carpeta “clean” paralela.<br><br>
+![](Doc_Media/image2.png)
+
+<br>
+
+<br><br>
 <img src="Doc_Media/frame_range.svg" alt="FRAME RANGE" width="245" height="33">
 
 ## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> Read -> FrameRange v1.0 - Lega | *Ctrl + Alt + F*
@@ -218,4 +227,3 @@ También registra el panel dentro del menú **Pane** para dejarlo disponible com
 
 Abre una interfaz para revisar y editar shortcuts del menú de Nuke.<br>
 La herramienta se integra al arranque del ToolPack-B y permite redefinir teclas sin editar manualmente `menu.py`.
-
