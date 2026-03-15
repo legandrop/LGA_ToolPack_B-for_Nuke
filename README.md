@@ -11,8 +11,14 @@
 
 ## Instalación
 
-- Copiar la carpeta **LGA_ToolPack-B** que contiene todos los
-  archivos **.py** a **%USERPROFILE%/.nuke**.
+- Copiar la carpeta **LGA_ToolPack-B** que contiene todos los archivos del ToolPack-B a **%USERPROFILE%/.nuke**.<br> Debería quedar así:
+   ```
+   .nuke/
+   └─ LGA_ToolPack-B/
+      ├─ menu.py
+      ├─ py/
+      └─ ...
+  ```
 
 - Con un editor de texto, agregar esta línea de código al archivo
   **init.py** que está dentro de la carpeta **.nuke**:
