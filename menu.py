@@ -147,6 +147,15 @@ add_tool(
     icon=icon_RnW,
 )
 
+add_tool(
+    n2,
+    label="  Update Folder Favs",
+    key="Update_Folder_Favs",
+    module="LGA_UpdateFolderFavs",
+    attr="main",
+    icon=icon_RnW,
+)
+
 
 # -----------------------------------------------------------------------------
 #                              FRAME RANGE TOOLS

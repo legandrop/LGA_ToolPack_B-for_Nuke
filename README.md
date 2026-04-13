@@ -83,6 +83,15 @@ Muestra los resultados en una tabla con estado (Match / Outdated / Missing) y un
 
 <br>
 
+
+
+
+<br><br>
+## <img src="Doc_Media/image7.png" alt="" width="6" height="16" style="margin-right:3px;"> Update Folder Favs v1.00 - Lega
+
+Detecta si Nuke/Hiero está corriendo en **Windows** o **macOS**, verifica la ubicación de **Desktop** y del volumen **T:** correspondiente, escanea todas las carpetas que empiezan con **VFX-** y muestra un diálogo con el detalle de los cambios que se van a aplicar en los favoritos del file browser.<br>
+Antes de escribir, crea siempre un backup **.back** del archivo **FileChooser_Favorites.pref** y actualiza únicamente los favoritos administrados por la herramienta, manteniendo intactos los demás.
+
 <br><br>
 <img src="Doc_Media/frame_range.svg" alt="FRAME RANGE" width="245" height="33">
 
