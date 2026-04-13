@@ -1,7 +1,7 @@
 """
 _____________________________________
 
-  LGA_ToolPack B v1.02 | Lega
+  LGA_ToolPack B v1.03 | Lega
   Colección de herramientas de Nuke
 _____________________________________
 
@@ -358,6 +358,6 @@ if is_enabled("Shortcut_Editor"):
 n2.addSeparator()
 
 n2.addCommand(
-    "Documentation v1.02",
+    "Documentation v1.03",
     lambda: webbrowser.open("https://github.com/legandrop/LGA_ToolPack_B-for_Nuke"),
 )
