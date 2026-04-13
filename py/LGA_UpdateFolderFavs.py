@@ -1,10 +1,9 @@
 """
-_____________________________________________________
+________________________________________
 
   LGA_UpdateFolderFavs v1.00 | Lega
-  Actualiza las carpetas favoritas del file browser 
-  de Nuke/Hiero según la plataforma detectada.
-_____________________________________________________
+  Actualiza los favoritos de carpetas
+________________________________________
 
 """
 
@@ -25,6 +24,35 @@ try:
     import nuke  # type: ignore
 except ImportError:
     nuke = None
+
+try:
+    from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore, primary_screen_geometry
+
+    QWidget = QtWidgets.QWidget
+    QVBoxLayout = QtWidgets.QVBoxLayout
+    QHBoxLayout = QtWidgets.QHBoxLayout
+    QTableWidget = QtWidgets.QTableWidget
+    QTableWidgetItem = QtWidgets.QTableWidgetItem
+    QHeaderView = QtWidgets.QHeaderView
+    QLabel = QtWidgets.QLabel
+    QPushButton = QtWidgets.QPushButton
+    QApplication = QtWidgets.QApplication
+    QAbstractItemView = QtWidgets.QAbstractItemView
+    QStyle = QtWidgets.QStyle
+    QStyledItemDelegate = QtWidgets.QStyledItemDelegate
+    QPalette = QtGui.QPalette
+    QFont = QtGui.QFont
+    QColor = QtGui.QColor
+    Qt = QtCore.Qt
+    QT_AVAILABLE = True
+except Exception:
+    QtWidgets = QtGui = QtCore = None
+    QWidget = object
+    QVBoxLayout = QHBoxLayout = QTableWidget = QTableWidgetItem = None
+    QHeaderView = QLabel = QPushButton = QApplication = None
+    QAbstractItemView = QStyle = QStyledItemDelegate = None
+    QPalette = QFont = QColor = Qt = None
+    QT_AVAILABLE = False
 
 
 PREF_FILENAME = "FileChooser_Favorites.pref"
@@ -57,6 +85,208 @@ class PlatformConfig:
     name: str
     desktop_path: Path
     t_root_path: Path
+
+
+@dataclass(frozen=True)
+class ChangeRow:
+    action: str
+    name: str
+    current_path: str
+    new_path: str
+
+
+if QT_AVAILABLE:
+    class ColorMixDelegate(QStyledItemDelegate):
+        def __init__(self, table_widget, background_colors, mix_color=(88, 88, 88), parent=None):
+            super(ColorMixDelegate, self).__init__(parent)
+            self.table_widget = table_widget
+            self.background_colors = background_colors
+            self.mix_color = mix_color
+
+        def paint(self, painter, option, index):
+            row = index.row()
+            column = index.column()
+            if row < len(self.background_colors) and column < len(self.background_colors[row]):
+                if option.state & QStyle.State_Selected:
+                    original_color = QColor(self.background_colors[row][column])
+                    mixed_color = self.mix_colors(
+                        (original_color.red(), original_color.green(), original_color.blue()),
+                        self.mix_color,
+                    )
+                    option.palette.setColor(QPalette.Highlight, QColor(*mixed_color))
+                else:
+                    original_color = QColor(self.background_colors[row][column])
+                    option.palette.setColor(QPalette.Base, original_color)
+            super(ColorMixDelegate, self).paint(painter, option, index)
+
+        def mix_colors(self, original_color, mix_color):
+            r1, g1, b1 = original_color
+            r2, g2, b2 = mix_color
+            return ((r1 + r2) // 2, (g1 + g2) // 2, (b1 + b2) // 2)
+
+
+    class UpdateFolderFavsWindow(QWidget):
+        def __init__(
+            self,
+            config: PlatformConfig,
+            rows: list[ChangeRow],
+            current_entries: list[FavoriteEntry],
+            new_entries: list[FavoriteEntry],
+            pref_path: Path,
+            parent=None,
+        ):
+            super(UpdateFolderFavsWindow, self).__init__(parent)
+            self.config = config
+            self.rows = rows
+            self.current_entries = current_entries
+            self.new_entries = new_entries
+            self.pref_path = pref_path
+            self.row_background_colors: list[list[str]] = []
+            self.applied = False
+            self._init_ui()
+            self._populate_rows()
+            self.adjust_window_size()
+
+        def _init_ui(self):
+            self.setWindowTitle("Update Folder Favs")
+            layout = QVBoxLayout(self)
+
+            self.table = QTableWidget(0, 4, self)
+            self.table.setHorizontalHeaderLabels(["Action", "Favorite", "Current Path", "New Path"])
+            self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.table.horizontalHeader().setStretchLastSection(True)
+            self.table.setSelectionBehavior(QTableWidget.SelectRows)
+            self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+            self.table.verticalHeader().setVisible(False)
+            self.table.setAlternatingRowColors(False)
+            self.table.setWordWrap(False)
+            self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+            font = QFont()
+            font.setBold(True)
+            self.table.horizontalHeader().setFont(font)
+
+            delegate = ColorMixDelegate(self.table, self.row_background_colors)
+            self.table.setItemDelegate(delegate)
+            layout.addWidget(self.table)
+
+            button_layout = QHBoxLayout()
+            button_layout.addStretch()
+
+            self.apply_button = QPushButton("Apply", self)
+            self.apply_button.setCursor(Qt.PointingHandCursor)
+            self.apply_button.setStyleSheet(
+                "QPushButton { padding: 6px 14px; font-weight: bold; background-color: #3e5a37; color: white; border: 0px; }"
+                "QPushButton:hover { background-color: #4a6a42; }"
+            )
+            self.apply_button.clicked.connect(self._apply_changes)
+
+            self.cancel_button = QPushButton("Cancel", self)
+            self.cancel_button.setCursor(Qt.PointingHandCursor)
+            self.cancel_button.setStyleSheet(
+                "QPushButton { padding: 6px 14px; font-weight: bold; background-color: #5f5f5f; color: white; border: 0px; }"
+                "QPushButton:hover { background-color: #787878; }"
+            )
+            self.cancel_button.clicked.connect(self.close)
+
+            button_layout.addWidget(self.apply_button)
+            button_layout.addWidget(self.cancel_button)
+            layout.addLayout(button_layout)
+            self.setLayout(layout)
+
+        def _populate_rows(self):
+            if not self.rows:
+                self.rows = [ChangeRow("Keep", "No changes", "", "Managed favorites are already up to date")]
+
+            for row_data in self.rows:
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+
+                action_item = QTableWidgetItem(row_data.action)
+                favorite_item = QTableWidgetItem(row_data.name)
+                current_item = QTableWidgetItem(row_data.current_path or "-")
+                new_item = QTableWidgetItem(row_data.new_path or "-")
+
+                for item in (action_item, favorite_item, current_item, new_item):
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+                action_color = self._action_color(row_data.action)
+                action_item.setTextAlignment(Qt.AlignCenter)
+                action_item.setBackground(QColor(action_color))
+                action_item.setForeground(QColor(self._text_color_for_bg(QColor(action_color))))
+
+                self.table.setItem(row, 0, action_item)
+                self.table.setItem(row, 1, favorite_item)
+                self.table.setItem(row, 2, current_item)
+                self.table.setItem(row, 3, new_item)
+
+                neutral = "#8a8a8a"
+                self.row_background_colors.append([action_color, neutral, neutral, neutral])
+
+            self.table.resizeColumnsToContents()
+
+        def _action_color(self, action: str) -> str:
+            colors = {"Add": "#47633f", "Remove": "#6b4747", "Update": "#7b6546", "Keep": "#4d4d4d"}
+            return colors.get(action, "#4d4d4d")
+
+        def _text_color_for_bg(self, color: QColor) -> str:
+            return "#cccccc"
+
+        def _apply_changes(self):
+            try:
+                _, _, final_entries, _, _, _, backup_path = execute_update(
+                    pref_path=self.pref_path,
+                    dry_run=False,
+                )
+            except Exception as exc:
+                if nuke:
+                    nuke.message(f"Update Folder Favs\n\nNo se pudieron aplicar los cambios:\n{exc}")
+                else:
+                    print(f"ERROR: {exc}")
+                return
+
+            self.applied = True
+            result_lines = ["Favoritos actualizados correctamente."]
+            if backup_path:
+                result_lines.extend(["", f"Backup: {backup_path}"])
+            result_lines.extend(["", "Favoritos finales:"])
+            result_lines.extend(summarize_entries(final_entries))
+
+            if nuke:
+                nuke.message("\n".join(result_lines))
+            else:
+                print("\n".join(result_lines))
+            self.close()
+
+        def adjust_window_size(self):
+            self.table.resizeColumnsToContents()
+            width = self.table.verticalHeader().width() + 40
+            for i in range(self.table.columnCount()):
+                width += self.table.columnWidth(i) + 20
+
+            header_height = self.table.horizontalHeader().height()
+            button_height = max(self.apply_button.sizeHint().height(), self.cancel_button.sizeHint().height())
+            frame_height = self.table.frameWidth() * 2
+            row_heights = sum(self.table.rowHeight(i) for i in range(self.table.rowCount()))
+            scrollbar_height = self.table.horizontalScrollBar().sizeHint().height()
+            table_height = header_height + row_heights + frame_height + 2
+            if self.table.horizontalScrollBar().isVisible():
+                table_height += scrollbar_height
+            self.table.setFixedHeight(table_height)
+
+            layout_spacing = self.layout().spacing() * 2
+            margins = self.layout().contentsMargins()
+            margins_height = margins.top() + margins.bottom()
+            height = table_height + button_height + layout_spacing + margins_height + 12
+
+            screen_rect = primary_screen_geometry()
+            final_width = min(width, int(screen_rect.width() * 0.85))
+            final_height = min(height, int(screen_rect.height() * 0.85))
+            self.resize(final_width, final_height)
+            self.move(
+                screen_rect.x() + (screen_rect.width() - final_width) // 2,
+                screen_rect.y() + (screen_rect.height() - final_height) // 2,
+            )
 
 
 def detect_platform_config(platform_name: str | None = None) -> PlatformConfig:
@@ -150,42 +380,24 @@ def parse_favorite_line(line: str) -> FavoriteEntry | None:
 
 def build_managed_entries(config: PlatformConfig) -> list[FavoriteEntry]:
     entries = [
-        FavoriteEntry(
-            flags=MANAGED_FLAGS,
-            label="Desktop",
-            display_label="Desktop",
-            shortcut="",
-            path=normalize_path_string(str(config.desktop_path)),
-            raw_line="",
-        ),
-        FavoriteEntry(
-            flags=MANAGED_FLAGS,
-            label="T:",
-            display_label="T:",
-            shortcut="",
-            path=normalize_path_string(str(config.t_root_path)),
-            raw_line="",
-        ),
+        FavoriteEntry(MANAGED_FLAGS, "Desktop", "Desktop", "", normalize_path_string(str(config.desktop_path)), ""),
+        FavoriteEntry(MANAGED_FLAGS, "T:", "T:", "", normalize_path_string(str(config.t_root_path)), ""),
     ]
 
     vfx_names = sorted(
-        [
-            child.name
-            for child in config.t_root_path.iterdir()
-            if child.is_dir() and child.name.startswith("VFX-")
-        ],
+        [child.name for child in config.t_root_path.iterdir() if child.is_dir() and child.name.startswith("VFX-")],
         key=str.lower,
     )
 
     for name in vfx_names:
         entries.append(
             FavoriteEntry(
-                flags=MANAGED_FLAGS,
-                label=name,
-                display_label=name,
-                shortcut="",
-                path=normalize_path_string(str(config.t_root_path / name)),
-                raw_line="",
+                MANAGED_FLAGS,
+                name,
+                name,
+                "",
+                normalize_path_string(str(config.t_root_path / name)),
+                "",
             )
         )
 
@@ -193,9 +405,7 @@ def build_managed_entries(config: PlatformConfig) -> list[FavoriteEntry]:
 
 
 def managed_roots(config: PlatformConfig) -> tuple[str, str]:
-    desktop = normalize_path_string(str(config.desktop_path))
-    t_root = normalize_path_string(str(config.t_root_path))
-    return desktop, t_root
+    return normalize_path_string(str(config.desktop_path)), normalize_path_string(str(config.t_root_path))
 
 
 def is_managed_entry(entry: FavoriteEntry, config: PlatformConfig) -> bool:
@@ -204,19 +414,14 @@ def is_managed_entry(entry: FavoriteEntry, config: PlatformConfig) -> bool:
 
     if entry.label in {"Desktop", "Desktop Mac"} or entry_path == desktop:
         return True
-
     if entry.label in {"T:", "T", "T Mac"} or entry_path == t_root:
         return True
-
     if entry.label.startswith("VFX-"):
         return True
-
     if entry_path.startswith(t_root + "/") and Path(entry_path).name.startswith("VFX-"):
         return True
-
     if entry_path.startswith("/../Volumes/") and Path(entry_path).name.startswith("VFX-"):
         return True
-
     return False
 
 
@@ -226,9 +431,7 @@ def read_pref_lines(pref_path: Path) -> list[str]:
     return pref_path.read_text(encoding="utf-8").splitlines(keepends=True)
 
 
-def build_updated_lines(
-    pref_path: Path, config: PlatformConfig
-) -> tuple[list[str], list[FavoriteEntry], list[FavoriteEntry]]:
+def build_updated_lines(pref_path: Path, config: PlatformConfig) -> tuple[list[str], list[FavoriteEntry], list[FavoriteEntry]]:
     original_lines = read_pref_lines(pref_path)
     kept_lines: list[str] = []
     removed_entries: list[FavoriteEntry] = []
@@ -242,7 +445,6 @@ def build_updated_lines(
 
     managed_entries = build_managed_entries(config)
     generated_lines = [favorite_line(entry) + "\n" for entry in managed_entries]
-
     header_lines = [line for line in kept_lines if line.startswith("#")]
     other_lines = [line for line in kept_lines if not line.startswith("#")]
 
@@ -266,7 +468,6 @@ def build_updated_lines(
     if new_lines[-1].strip():
         new_lines.append("\n")
     new_lines.append(FOOTER_LINE + "\n")
-
     return new_lines, removed_entries, managed_entries
 
 
@@ -278,15 +479,9 @@ def create_backup(pref_path: Path) -> Path:
 
 def atomic_write(target_path: Path, lines: Iterable[str]) -> None:
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        "w",
-        encoding="utf-8",
-        dir=str(target_path.parent),
-        delete=False,
-    ) as handle:
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=str(target_path.parent), delete=False) as handle:
         temp_path = Path(handle.name)
         handle.writelines(lines)
-
     os.replace(temp_path, target_path)
 
 
@@ -294,27 +489,38 @@ def summarize_entries(entries: Iterable[FavoriteEntry]) -> list[str]:
     return [f"{entry.label} -> {entry.path}" for entry in entries]
 
 
-def diff_summary(
-    old_entries: list[FavoriteEntry], new_entries: list[FavoriteEntry]
-) -> tuple[list[str], list[str], list[str]]:
+def diff_summary(old_entries: list[FavoriteEntry], new_entries: list[FavoriteEntry]) -> tuple[list[str], list[str], list[str]]:
     old_map = {entry.label: entry.path for entry in old_entries}
     new_map = {entry.label: entry.path for entry in new_entries}
 
-    added = [
-        f"{label} -> {new_map[label]}"
-        for label in sorted(new_map.keys() - old_map.keys(), key=str.lower)
-    ]
-    removed = [
-        f"{label} -> {old_map[label]}"
-        for label in sorted(old_map.keys() - new_map.keys(), key=str.lower)
-    ]
-
+    added = [f"{label} -> {new_map[label]}" for label in sorted(new_map.keys() - old_map.keys(), key=str.lower)]
+    removed = [f"{label} -> {old_map[label]}" for label in sorted(old_map.keys() - new_map.keys(), key=str.lower)]
     changed = []
     for label in sorted(old_map.keys() & new_map.keys(), key=str.lower):
         if old_map[label] != new_map[label]:
             changed.append(f"{label}: {old_map[label]} -> {new_map[label]}")
-
     return added, removed, changed
+
+
+def build_change_rows(old_entries: list[FavoriteEntry], new_entries: list[FavoriteEntry]) -> list[ChangeRow]:
+    old_map = {entry.label: entry.path for entry in old_entries}
+    new_map = {entry.label: entry.path for entry in new_entries}
+    rows: list[ChangeRow] = []
+
+    for label in sorted(new_map.keys() - old_map.keys(), key=str.lower):
+        rows.append(ChangeRow("Add", label, "", new_map[label]))
+
+    for label in sorted(old_map.keys() - new_map.keys(), key=str.lower):
+        rows.append(ChangeRow("Remove", label, old_map[label], ""))
+
+    for label in sorted(old_map.keys() & new_map.keys(), key=str.lower):
+        if old_map[label] != new_map[label]:
+            rows.append(ChangeRow("Update", label, old_map[label], new_map[label]))
+    for label in sorted(old_map.keys() & new_map.keys(), key=str.lower):
+        if old_map[label] == new_map[label]:
+            rows.append(ChangeRow("Keep", label, old_map[label], new_map[label]))
+
+    return rows
 
 
 def ensure_paths_exist(config: PlatformConfig) -> None:
@@ -323,88 +529,13 @@ def ensure_paths_exist(config: PlatformConfig) -> None:
         missing.append(f"No existe Desktop: {config.desktop_path}")
     if not config.t_root_path.exists():
         missing.append(f"No existe la raiz T: {config.t_root_path}")
-
     if missing:
         raise FileNotFoundError("\n".join(missing))
 
 
-def build_preview_message(
-    config: PlatformConfig,
-    current_entries: list[FavoriteEntry],
-    new_entries: list[FavoriteEntry],
-    added: list[str],
-    removed: list[str],
-    changed: list[str],
-) -> str:
-    lines = [
-        f"Sistema detectado: {config.name}",
-        f"Desktop: {config.desktop_path}",
-        f"T: {config.t_root_path}",
-        "",
-        "Favoritos actuales administrados:",
-    ]
-
-    current_summary = summarize_entries(current_entries)
-    if current_summary:
-        lines.extend(current_summary)
-    else:
-        lines.append("<ninguno>")
-
-    lines.extend(["", "Favoritos nuevos:"])
-    lines.extend(summarize_entries(new_entries))
-
-    lines.extend(["", "Cambios a aplicar:"])
-    if added:
-        lines.append("Agregar:")
-        lines.extend(added)
-    if removed:
-        lines.append("Eliminar:")
-        lines.extend(removed)
-    if changed:
-        lines.append("Modificar:")
-        lines.extend(changed)
-    if not any((added, removed, changed)):
-        lines.append("No hay cambios.")
-
-    lines.extend(
-        [
-            "",
-            "Se va a crear/actualizar un backup .back antes de escribir.",
-            "",
-            "¿Aplicar cambios?",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def show_message(message: str) -> None:
-    if nuke:
-        nuke.message(message)
-    else:
-        print(message)
-
-
-def ask_confirmation(message: str) -> bool:
-    if nuke:
-        return nuke.ask(message)
-    print(message)
-    return False
-
-
-def execute_update(
-    pref_path: Path, platform_name: str | None = None, dry_run: bool = False
-) -> tuple[
-    PlatformConfig,
-    list[FavoriteEntry],
-    list[FavoriteEntry],
-    list[str],
-    list[str],
-    list[str],
-    Path | None,
-]:
+def execute_update(pref_path: Path, platform_name: str | None = None, dry_run: bool = False):
     config = detect_platform_config(platform_name)
     ensure_paths_exist(config)
-
     new_lines, current_entries, new_entries = build_updated_lines(pref_path, config)
     added, removed, changed = diff_summary(current_entries, new_entries)
 
@@ -417,69 +548,60 @@ def execute_update(
     return config, current_entries, new_entries, added, removed, changed, backup_path
 
 
-def main(dry_run: bool = False, platform_name: str | None = None) -> int:
+def show_ui(platform_name: str | None = None) -> int:
     pref_path = Path.home() / ".nuke" / PREF_FILENAME
-
     try:
         config = detect_platform_config(platform_name)
         ensure_paths_exist(config)
         _, current_entries, new_entries = build_updated_lines(pref_path, config)
-        added, removed, changed = diff_summary(current_entries, new_entries)
     except Exception as exc:
-        show_message(f"Update Folder Favs\n\n{exc}")
+        if nuke:
+            nuke.message(f"Update Folder Favs\n\n{exc}")
+        else:
+            print(f"ERROR: {exc}")
         return 1
 
-    preview = build_preview_message(
-        config=config,
-        current_entries=current_entries,
-        new_entries=new_entries,
-        added=added,
-        removed=removed,
-        changed=changed,
-    )
+    rows = build_change_rows(current_entries, new_entries)
+    window = UpdateFolderFavsWindow(config, rows, current_entries, new_entries, pref_path)
+    window.setAttribute(Qt.WA_DeleteOnClose)
+    window.show()
 
+    global update_folder_favs_window
+    update_folder_favs_window = window
+    return 0
+
+
+def main(dry_run: bool = False, platform_name: str | None = None) -> int:
+    pref_path = Path.home() / ".nuke" / PREF_FILENAME
     if dry_run or not nuke:
-        print(preview)
-        return 0 if dry_run else 1
+        try:
+            config = detect_platform_config(platform_name)
+            ensure_paths_exist(config)
+            _, current_entries, new_entries = build_updated_lines(pref_path, config)
+            rows = build_change_rows(current_entries, new_entries)
+        except Exception as exc:
+            print(f"ERROR: {exc}")
+            return 1
 
-    if not ask_confirmation(preview):
+        print(f"Sistema detectado: {config.name}")
+        print(f"Desktop: {config.desktop_path}")
+        print(f"T: {config.t_root_path}")
+        print(f"Backup: {pref_path}.back")
+        print("")
+        if rows:
+            for row in rows:
+                print(f"{row.action}: {row.name} | {row.current_path or '-'} | {row.new_path or '-'}")
+        else:
+            print("No hay cambios.")
         return 0
 
-    try:
-        _, _, final_entries, added, removed, changed, backup_path = execute_update(
-            pref_path=pref_path,
-            platform_name=platform_name,
-            dry_run=False,
-        )
-    except Exception as exc:
-        show_message(f"Update Folder Favs\n\nNo se pudieron aplicar los cambios:\n{exc}")
-        return 1
-
-    result_lines = ["Update Folder Favs", "", "Favoritos actualizados correctamente."]
-    if backup_path:
-        result_lines.extend(["", f"Backup: {backup_path}"])
-    result_lines.extend(["", "Favoritos finales:"])
-    result_lines.extend(summarize_entries(final_entries))
-
-    if not any((added, removed, changed)):
-        result_lines.extend(["", "No había cambios, pero el archivo fue normalizado."])
-
-    show_message("\n".join(result_lines))
-    return 0
+    return show_ui(platform_name=platform_name)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Actualiza favoritos de carpetas para Nuke/Hiero.")
-    parser.add_argument(
-        "--platform",
-        choices=("windows", "mac"),
-        help="Fuerza plataforma para pruebas fuera de Nuke.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Muestra el preview sin escribir el archivo.",
-    )
+    parser.add_argument("--platform", choices=("windows", "mac"), help="Fuerza plataforma para pruebas.")
+    parser.add_argument("--dry-run", action="store_true", help="Muestra cambios por consola sin escribir.")
     return parser
 
 
