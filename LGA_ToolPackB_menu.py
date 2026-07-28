@@ -103,6 +103,21 @@ def add_tool(menu, label, key, module, attr, shortcut=None, icon=None, context=2
     menu.addCommand(label, _runner, **kwargs)
 
 
+def _export_to_main(**objects):
+    """Publica los objetos recibidos en el namespace __main__.
+
+    Nuke evalua los comandos de menu pasados como string dentro de __main__.
+    Mientras la implementacion vivia en menu.py eso funcionaba solo, porque Nuke
+    ejecuta menu.py en ese mismo namespace. Ahora el codigo vive en este modulo,
+    asi que sus imports quedan en el namespace del modulo y los comandos string
+    fallarian con NameError si no se publican explicitamente.
+    """
+    import __main__
+
+    for name, obj in objects.items():
+        setattr(__main__, name, obj)
+
+
 def _get_icon(name):
     icons_root = os.path.join(PY_DIR, "icons")
     path = os.path.join(icons_root, name) + ".png"
@@ -303,6 +318,8 @@ if is_enabled("Default_KnobDefaults"):
     # Sin try/except para que falle si hay error
     from default.default import default_main, helper
 
+    _export_to_main(default_main=default_main)
+
     n2.addCommand(
         "  Edit Default Knobs Values",
         default_main.show_defaults_window,
@@ -350,6 +367,8 @@ add_tool(
 if is_enabled("Perf_Time"):
     # Sin try/except para que falle si hay error
     import perf_time
+
+    _export_to_main(perf_time=perf_time)
 
     n2.addCommand("  Performance Timers", "perf_time.show_panel()", icon=icon_VA)
     pane_m = nuke.menu("Pane")

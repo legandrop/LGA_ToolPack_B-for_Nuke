@@ -1,6 +1,8 @@
 # Changelog
 
 ## v1.05
+- Se corrigen los comandos de menú de `default_main` (set as new knobDefault, show knob list, reset) y `perf_time.show_panel`, que fallaban con `NameError`. Al mover la implementación de `menu.py` a `LGA_ToolPackB_menu.py`, los imports pasaron a vivir en el namespace del módulo, pero Nuke evalúa los comandos pasados como string dentro de `__main__`, donde esos nombres ya no existían. Se agrega el helper `_export_to_main()` y se publica ahí cada módulo usado por un comando string. [ ToolPack B - Reparar comandos de menu tras mover la implementacion ]
+
 - El instalador ordena `~/.nuke/init.py` de forma canónica en Windows y macOS: recolecta todos los bloques `pluginAddPath` de LGA, los reordena según el orden oficial (Layout, ToolPack-B, ToolPack, NodePack, OpenInNukeX, Defaults, CollectedTools), elimina duplicados y deja intactos los paths ajenos. Antes cada plataforma resolvía el orden de una manera distinta y macOS simplemente agregaba al final. [ ToolPack B - Unificar el orden del init.py ]
 
 - Se agregan instaladores transaccionales para Windows y macOS, con validación del payload, backup de la carpeta previa, actualización idempotente de `init.py` y restauración ante fallos. Los generadores de release incluyen ambos instaladores y aplican exclusiones seguras aunque no exista un `+exclude.lst` local. [ ToolPack B - Agregar instaladores multiplataforma ]
