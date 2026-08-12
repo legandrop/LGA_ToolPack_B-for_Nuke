@@ -26,9 +26,9 @@
   nuke.pluginAddPath('./LGA_ToolPack-B')
   ```
 
-- El ToolPack permite **activar/desactivar** herramientas editando el archivo **\_LGA_ToolPack-B_Enabled.ini**<br>
-  Por defecto todas las herramientas están en **True**. Las que se cambian a **False**, se ocultan y evitan cargarse.<br>
-  Para conservar la configuración en futuras actualizaciones, se puede copiar el archivo **.ini** a la carpeta **\~/.nuke/**
+- El ToolPack permite **activar/desactivar** herramientas desde el menú **TP2 > Enable Tools**<br>
+  Las que se destildan se ocultan del menú y evitan cargarse. Los cambios se aplican al reiniciar Nuke.<br>
+  La elección se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_B\Enabled.ini** (Windows) o **~/Library/Application Support/LGA/ToolPack_B/Enabled.ini** (macOS), así que las actualizaciones no la pisan.
 
 
 <br><br>

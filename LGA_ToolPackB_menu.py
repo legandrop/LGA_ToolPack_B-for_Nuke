@@ -11,7 +11,6 @@ import nuke
 import nukescripts
 import os
 import importlib
-import configparser
 import webbrowser
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -39,45 +38,42 @@ nuke.pluginAddPath(PY_DIR.replace("\\", "/"))
 # --- Config loader & helpers (igual que ToolPack) ----------------------------
 
 
-def _ini_paths():
-    home = os.path.expanduser("~")
-    user_ini = os.path.join(home, ".nuke", "_LGA_ToolPack-B_Enabled.ini")
-    pkg_ini = os.path.join(ROOT_DIR, "_LGA_ToolPack-B_Enabled.ini")
-    return user_ini, pkg_ini
-
-
-_TOOL_FLAGS = None
+# El estado de las tools lo resuelve LGA_ToolPackB_Enabled, que lo lee de la
+# carpeta de datos del usuario y no de adentro del pack. Vive en py/ para que
+# el panel de Enable Tools use exactamente la misma logica que el menu.
+# `except Exception` y no `except ImportError`: un SyntaxError o un fallo de
+# encoding al importar no son ImportError, se propagarian y Nuke arrancaria sin
+# el menu entero, que es exactamente lo que se quiere evitar.
+try:
+    import LGA_ToolPackB_Enabled as _enabled_config
+except Exception as _enabled_error:
+    # Si el modulo falta, el menu tiene que armarse igual y con todo visible:
+    # es preferible mostrar de mas a dejar al usuario sin herramientas.
+    nuke.warning("No se pudo cargar LGA_ToolPackB_Enabled: %s" % _enabled_error)
+    _enabled_config = None
+else:
+    # Siembra la config del usuario la primera vez, rescatando lo que hubiera
+    # configurado antes de que esa ubicacion existiera. Va en su propio try
+    # por el mismo motivo: sembrar es una comodidad, no una condicion para
+    # que exista el menu.
+    try:
+        _enabled_config.ensure_user_ini()
+    except Exception as _seed_error:
+        nuke.warning("No se pudo sembrar la config de LGA ToolPack-B: %s" % _seed_error)
 
 
 def load_tool_flags():
-    """Lee el INI (user pisa a package). Si falta/rompe => todo True."""
-    global _TOOL_FLAGS
-    if _TOOL_FLAGS is not None:
-        return _TOOL_FLAGS
-
-    cfg = configparser.ConfigParser()
-    cfg.optionxform = str
-    user_ini, pkg_ini = _ini_paths()
-    read_ok = False
-    for path in [pkg_ini, user_ini]:
-        if os.path.isfile(path):
-            try:
-                cfg.read(path, encoding="utf-8")
-                read_ok = True
-            except Exception:
-                pass
-
-    flags = {}
-    if read_ok and cfg.has_section("Tools"):
-        for key, val in cfg.items("Tools"):
-            v = str(val).strip().lower()
-            flags[key] = v in ("1", "true", "yes", "on")
-    _TOOL_FLAGS = flags
-    return _TOOL_FLAGS
+    """Estado efectivo de las tools. {} si el modulo de config no cargo."""
+    if _enabled_config is None:
+        return {}
+    return _enabled_config.load_flags()
 
 
 def is_enabled(key: str) -> bool:
-    return load_tool_flags().get(key, True)
+    """Si no está en ninguna capa => True (default)."""
+    if _enabled_config is None:
+        return True
+    return _enabled_config.is_enabled(key)
 
 
 def add_tool(menu, label, key, module, attr, shortcut=None, icon=None, context=2):
@@ -389,6 +385,18 @@ if is_enabled("Shortcut_Editor"):
 #                                 Version
 # -----------------------------------------------------------------------------
 n2.addSeparator()
+
+
+def _enable_tools_runner():
+    import LGA_ToolPackB_EnabledPanel
+
+    LGA_ToolPackB_EnabledPanel.main()
+
+
+# A proposito NO pasa por is_enabled(): si el usuario apaga todo, este es el
+# unico camino de vuelta. Un panel que se puede desactivar a si mismo deja al
+# usuario sin forma de reactivar nada sin editar archivos a mano.
+n2.addCommand("Enable Tools", _enable_tools_runner)
 
 n2.addCommand(
     "Documentation v%s" % PRODUCT_VERSION,

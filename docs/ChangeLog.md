@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.08
+
+- Las herramientas que el usuario apagaba se perdian en cada actualizacion: el estado vivia adentro del pack, en `_LGA_ToolPack-B_Enabled.ini`, y el instalador renombra esa carpeta y copia la version nueva limpia. Ese archivo pasa a ser `Enabled.default.ini`, solo el manifiesto de fabrica, y la eleccion del usuario se guarda afuera: `%APPDATA%\LGA\ToolPack_B\Enabled.ini`, o bajo `~/Library/Application Support` en macOS. Ahi se guarda unicamente lo que difiere del manifiesto, asi agregar o borrar tools entre versiones no deja claves muertas. Se agrega el menu **TP2 > Enable Tools**, con un checkbox por herramienta. La config existente se migra sola en el primer arranque y el ini viejo de `.nuke` no se toca. `CopyCat_Cleaner` y `Paste_To_Selected` se heredan del ini historico de LGA_ToolPack, donde vivian antes. [ ToolPack-B - Mover la config de tools fuera del pack y agregar Enable Tools ]
+
 ## v1.07
 - El `install.pdf` se reemplaza por `install_es.pdf` e `install_en.pdf`. La hoja vieja salia de exportar un Google Doc a mano y quedo congelada en el metodo manual: no menciona los instaladores que el ZIP trae desde hace varias versiones, y ademas daba el backup del `init.py` como `init.py.bak`, un nombre que los motores ya no usan: hoy guardan una copia numerada en `~/.nuke/LGA_init_backups/`. Las dos hojas se generan ahora desde una plantilla unica en el repo de release, con la version leida del `VERSION` del repo, asi que el texto comun deja de mantenerse por separado en cada producto. Se documenta tambien que en macOS el instalador va con `bash installer_mac.sh`: los `.sh` pierden el permiso de ejecucion dentro del `.zip` y `./installer_mac.sh` da `Permission denied`. [ ToolPack-B - Reemplazar install.pdf por las hojas en castellano e ingles ]
 
