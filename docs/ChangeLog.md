@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.09
+
+- Nuevo `py/LGA_UI_Style_ToolPackB.py`: fuente unica de la paleta, las medidas y el QSS de las ventanas del pack. Es codigo identico al modulo de los otros dos packs a proposito: son repos independientes y un usuario puede tener instalado uno solo, asi que no pueden importarse entre si, pero un color cambiado tiene que cambiar en los tres. Trae ademas el coloreado de paths por nivel de directorio, con la misma paleta que usan las apps Qt/C++ de LGA. [ ToolPack B - Agregar el modulo de estilo unificado ]
+
+- Los titulos de grupo de `Enable Tools` con un `&` salian con el `&` comido y un espacio de mas: Qt lo lee como marca de mnemonico. Con el grupo sin marco pasaba desapercibido; ahora que el titulo va enmarcado se nota. Ademas, el CSS del tooltip lo aplicaba un helper que vive solo en el ToolPack, asi que este pack dependia de tener ese otro instalado para que sus tooltips se vieran bien: si falta, ahora los pinta con los mismos valores desde su propio modulo de estilo. [ ToolPack B - Corregir el & de los titulos y los tooltips sin el helper ]
+
+- `Enable Tools` pasa a ese modulo. Antes no aplicaba ninguna hoja de estilo, asi que heredaba el tema de Nuke y era la ventana del pack que menos se parecia a las demas: ahora cada grupo de herramientas tiene marco y titulo propios, el boton `Save` es el violeta del pack y el resto van grises, y el path del archivo de configuracion va coloreado por nivel de directorio. [ ToolPack B - Unificar el estilo de Enable Tools ]
+
 ## v1.08
 
 - Las herramientas que el usuario apagaba se perdian en cada actualizacion: el estado vivia adentro del pack, en `_LGA_ToolPack-B_Enabled.ini`, y el instalador renombra esa carpeta y copia la version nueva limpia. Ese archivo pasa a ser `Enabled.default.ini`, solo el manifiesto de fabrica, y la eleccion del usuario se guarda afuera: `%APPDATA%\LGA\ToolPack_B\Enabled.ini`, o bajo `~/Library/Application Support` en macOS. Ahi se guarda unicamente lo que difiere del manifiesto, asi agregar o borrar tools entre versiones no deja claves muertas. Se agrega el menu **TP2 > Enable Tools**, con un checkbox por herramienta. La config existente se migra sola en el primer arranque y el ini viejo de `.nuke` no se toca. `CopyCat_Cleaner` y `Paste_To_Selected` se heredan del ini historico de LGA_ToolPack, donde vivian antes. [ ToolPack-B - Mover la config de tools fuera del pack y agregar Enable Tools ]
