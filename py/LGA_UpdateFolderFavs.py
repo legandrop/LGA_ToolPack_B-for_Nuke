@@ -1,8 +1,13 @@
 """
 ________________________________________
 
-  LGA_UpdateFolderFavs v1.00 | Lega
+  LGA_UpdateFolderFavs v1.01 | Lega
   Actualiza los favoritos de carpetas
+
+  v1.01: El look sale del modulo de estilo del pack. La ventana no
+         fijaba fondo propio y heredaba el tema del host, y el boton
+         de accion estaba a la izquierda del Cancel.
+  v1.00: Version inicial.
 ________________________________________
 
 """
@@ -24,6 +29,11 @@ try:
     import nuke  # type: ignore
 except ImportError:
     nuke = None
+
+# Va afuera del try de Qt a proposito: ese try captura Exception, asi que un
+# error del modulo de estilo dejaba QT_AVAILABLE en False y apagaba la GUI
+# entera sin decir nada.
+from LGA_UI_Style_ToolPackB import Color, Style
 
 try:
     from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore, primary_screen_geometry
@@ -149,6 +159,10 @@ if QT_AVAILABLE:
 
         def _init_ui(self):
             self.setWindowTitle("Update Folder Favs")
+            # Sin esto la ventana hereda el tema del host y se ve distinta
+            # de las demas del pack. El fondo de fila lo pinta el delegado, asi
+            # que la tabla no lleva el estilo completo.
+            self.setStyleSheet(Style.WINDOW)
             layout = QVBoxLayout(self)
 
             self.table = QTableWidget(0, 4, self)
@@ -167,6 +181,14 @@ if QT_AVAILABLE:
             self.table.horizontalHeader().setFont(font)
 
             delegate = ColorMixDelegate(self.table, self.row_background_colors)
+            # La regla de item:selected de la hoja gana sobre el setBackground
+            # del item, asi que al seleccionar una fila se perdia su color de
+            # accion. Se anula: el color de la fila es la informacion.
+            # A esta tabla NO se le aplica Style.TABLE. El color de cada fila
+            # es la informacion (Add / Remove / Update / Keep) y lo pintan el
+            # ColorMixDelegate y el setBackground del item; la regla
+            # item:selected de la hoja le gana a los dos y al seleccionar una
+            # fila se perdia su color. La tabla se queda con el tema del host.
             self.table.setItemDelegate(delegate)
             layout.addWidget(self.table)
 
@@ -175,22 +197,18 @@ if QT_AVAILABLE:
 
             self.apply_button = QPushButton("Apply", self)
             self.apply_button.setCursor(Qt.PointingHandCursor)
-            self.apply_button.setStyleSheet(
-                "QPushButton { padding: 6px 14px; font-weight: bold; background-color: #3e5a37; color: white; border: 0px; }"
-                "QPushButton:hover { background-color: #4a6a42; }"
-            )
+            self.apply_button.setStyleSheet(Style.BTN_PRIMARY)
             self.apply_button.clicked.connect(self._apply_changes)
 
             self.cancel_button = QPushButton("Cancel", self)
             self.cancel_button.setCursor(Qt.PointingHandCursor)
-            self.cancel_button.setStyleSheet(
-                "QPushButton { padding: 6px 14px; font-weight: bold; background-color: #5f5f5f; color: white; border: 0px; }"
-                "QPushButton:hover { background-color: #787878; }"
-            )
+            self.cancel_button.setStyleSheet(Style.BTN_SECONDARY)
             self.cancel_button.clicked.connect(self.close)
 
-            button_layout.addWidget(self.apply_button)
+            # El de accion va ultimo: es la posicion que el ojo aprende, y es
+            # la misma en todas las ventanas del pack.
             button_layout.addWidget(self.cancel_button)
+            button_layout.addWidget(self.apply_button)
             layout.addLayout(button_layout)
             self.setLayout(layout)
 
@@ -220,17 +238,24 @@ if QT_AVAILABLE:
                 self.table.setItem(row, 2, current_item)
                 self.table.setItem(row, 3, new_item)
 
-                neutral = "#8a8a8a"
+                neutral = Color.SURFACE_RAISED
                 self.row_background_colors.append([action_color, neutral, neutral, neutral])
 
             self.table.resizeColumnsToContents()
 
         def _action_color(self, action: str) -> str:
-            colors = {"Add": "#47633f", "Remove": "#6b4747", "Update": "#7b6546", "Keep": "#4d4d4d"}
-            return colors.get(action, "#4d4d4d")
+            # Fondo de la pastilla de accion: agregar es un ok, quitar un
+            # error, actualizar un aviso, y dejar como esta no es nada.
+            colors = {
+                "Add": Color.OK_BG,
+                "Remove": Color.ERROR_BG,
+                "Update": Color.WARNING_BG,
+                "Keep": Color.SURFACE_RAISED,
+            }
+            return colors.get(action, Color.SURFACE_RAISED)
 
         def _text_color_for_bg(self, color: QColor) -> str:
-            return "#cccccc"
+            return Color.TEXT_STRONG
 
         def _apply_changes(self):
             try:

@@ -2,6 +2,8 @@
 
 ## v1.09
 
+- `CopyCat Cleaner` y `Update Folder Favs` pasan al modulo de estilo unificado. En `CopyCat Cleaner` la paleta por nivel de directorio estaba copiada a mano del Media Manager, o sea que podia derivar sin que nada avisara: ahora sale del modulo, que es la misma tupla que usan las apps Qt/C++. En `Update Folder Favs` la ventana no fijaba ningun fondo propio y heredaba el del host, y el boton de accion estaba a la IZQUIERDA del Cancel: ahora va ultimo, que es la posicion que el ojo aprende en el resto del pack. La tabla se deja como estaba a proposito: el color de cada fila es la informacion y lo pinta un delegado propio, al que la hoja de tabla del pack le gana y se lo tapa al seleccionar. Los fondos de las pastillas de estado salen de tres colores nuevos de la paleta. [ ToolPack B - Unificar el estilo de CopyCat Cleaner y Update Folder Favs ]
+
 - El modulo de estilo deja de pisarle el campo interno a los `QSpinBox`. La hoja de formulario pinta los `QLineEdit`, y adentro de un spinbox el campo TAMBIEN es un `QLineEdit`: le caia un segundo borde y un segundo padding adentro de su propia caja, y el numero quedaba recortado contra las flechitas. El spinbox se deja nativo a proposito: en cuanto el QSS le define caja o flechas, Qt deja de dibujar los triangulos y la sub-control termina tapando el valor. [ ToolPack B - Corregir el spinbox en el modulo de estilo ]
 
 - El modulo de estilo suma `Color.ENTITY`, para destacar el nombre de una task o de un nodo en un mensaje. Antes esos nombres se pintaban con el color del prefijo comun de la paleta de paths, que se ve igual pero significa otra cosa: retocar la paleta de paths le habria cambiado el color a algo que no es un path. [ ToolPack B - Agregar Color.ENTITY al modulo de estilo ]

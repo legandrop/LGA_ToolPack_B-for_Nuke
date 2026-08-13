@@ -1,13 +1,19 @@
 """
 _______________________________________
 
-  LGA_CopyCat_Cleaner v1.01 | Lega
+  LGA_CopyCat_Cleaner v1.02 | Lega
   Verifica que los nodos Inference usen el .cat mas alto en su carpeta
+
+  v1.02: El look sale del modulo de estilo del pack. La paleta por
+         nivel de directorio estaba copiada a mano del Media Manager,
+         asi que podia derivar sin que nada avisara.
+  v1.01: Version anterior, sin changelog interno.
 _______________________________________
 
 """
 
 from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore
+from LGA_UI_Style_ToolPackB import PATH_PALETTE, Color, Style
 
 QApplication = QtWidgets.QApplication
 QWidget = QtWidgets.QWidget
@@ -248,13 +254,11 @@ class ResultsWindow(QWidget):
         self.table.setSelectionMode(QTableWidget.NoSelection)
         self.table.verticalHeader().setVisible(False)
         self.table.setFocusPolicy(Qt.NoFocus)
+        # El fondo de cada fila lo pinta el delegado, asi que la seleccion
+        # se anula en vez de sumarle otro color encima.
         self.table.setStyleSheet(
-            """
-            QTableView::item:selected {
-                color: black;
-                background-color: transparent;
-            }
-        """
+            Style.TABLE
+            + "QTableView::item:selected { background-color: transparent; }"
         )
 
         delegate = ColorMixDelegate(self.table, self.row_background_colors)
@@ -273,22 +277,12 @@ class ResultsWindow(QWidget):
         self.project_folder = project_folder or ""
 
     def _get_color_for_level(self, level: int) -> str:
-        # Colores copiados del Media Manager
-        colors = {
-            0: "#ffff66",  # Amarillo
-            1: "#28b5b5",  # Verde Cian
-            2: "#ff9a8a",  # Naranja pastel
-            3: "#0088ff",  # Rojo coral
-            4: "#ffd369",  # Amarillo mostaza
-            5: "#28b5b5",  # Verde Cian
-            6: "#ff9a8a",  # Naranja pastel
-            7: "#6bc9ff",  # Celeste
-            8: "#ffd369",  # Amarillo mostaza
-            9: "#28b5b5",  # Verde Cian
-            10: "#ff9a8a",  # Naranja pastel
-            11: "#6bc9ff",  # Celeste
-        }
-        return colors.get(level, "#000000")
+        # La paleta por nivel de directorio es la del modulo de estilo, la
+        # misma que usan el Media Manager y las apps Qt/C++. Estaba copiada a
+        # mano aca, o sea que podia derivar sin que nada avisara.
+        if 0 <= level < len(PATH_PALETTE):
+            return PATH_PALETTE[level]
+        return Color.TEXT_DIM
 
     def _build_colored_path_html(self, full_path: str) -> str:
         # Normaliza y colorea cada parte del path; resalta coincidencias con project_folder
@@ -305,15 +299,16 @@ class ResultsWindow(QWidget):
         for i, part in enumerate(parts[:-1]):
             if i < len(project_parts) and part == project_parts[i]:
                 text_color = (
-                    "#c56cf0"  # mismo color que usa Media Manager para el proyecto
+                    Color.PATH_COMMON  # la parte comun del path, como en el resto
                 )
             else:
                 text_color = self._get_color_for_level(i)
             colored_parts.append(f"<span style='color: {text_color};'>{part}</span>")
 
-        file_name = f"<b style='color: rgb(200, 200, 200);'>{parts[-1]}</b>"
+        file_name = f"<b style='color: {Color.TEXT_STRONG};'>{parts[-1]}</b>"
         colored_parts.append(file_name)
-        colored_text = '<span style="color: white;">/</span>'.join(colored_parts)
+        separator = f'<span style="color: {Color.PATH_SEPARATOR};">/</span>'
+        colored_text = separator.join(colored_parts)
         return colored_text
 
     def add_result(
@@ -328,35 +323,32 @@ class ResultsWindow(QWidget):
         current_label.setTextFormat(Qt.RichText)
         current_label.setText(self._build_colored_path_html(current_model or ""))
         current_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        current_label.setStyleSheet("padding-left: 6px; padding-right: 6px;")
         latest_display = os.path.basename(latest_model) if latest_model else "-"
         # Latest Model: aplicar mismo estilo de filename que Current (negrita y blanco)
         latest_label = QLabel(
-            f"<b style='color: rgb(200, 200, 200);'>{latest_display}</b>"
+            f"<b style='color: {Color.TEXT_STRONG};'>{latest_display}</b>"
         )
         latest_label.setTextFormat(Qt.RichText)
         latest_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        latest_label.setStyleSheet("padding-left: 6px; padding-right: 6px;")
         # Status como QLabel para padding
         status_label = QLabel(status)
         status_label.setAlignment(Qt.AlignCenter)
         # Clean button
         clean_button = QPushButton("Clean")
         clean_button.setCursor(Qt.PointingHandCursor)
-        clean_button.setStyleSheet(
-            "QPushButton { padding: 4px 8px; font-weight: bold; background-color: #443a91; color: white; border: 0px; }"
-            "QPushButton:hover { background-color: #7d3ff8; }"
-        )
+        clean_button.setStyleSheet(Style.BTN_SMALL)
 
         # status_label ya centrado via alignment y con padding
 
         # colores por estado
+        # Fondo del estado. Son los tres semanticos del pack: al estar detras
+        # de texto van oscurecidos, pero salen del mismo lugar que el resto.
         if status == "Latest":
-            status_color = "#244c19"  # verde oscuro
+            status_color = Color.OK_BG
         elif status == "Outdated":
-            status_color = "#8a4500"  # naranja oscuro
+            status_color = Color.WARNING_BG
         else:
-            status_color = "#660000"  # rojo oscuro (missing u otros)
+            status_color = Color.ERROR_BG
 
         status_bg_color = QColor(status_color)
         status_text_css = self._text_color_for_bg(status_bg_color)
@@ -371,7 +363,9 @@ class ResultsWindow(QWidget):
         self.table.setCellWidget(row, 4, clean_button)
 
         # colores para delegado (una por columna)
-        row_colors = ["#8a8a8a", "#8a8a8a", "#8a8a8a", status_color, "#8a8a8a"]
+        # El fondo de las celdas sin estado lo pone la hoja de la tabla.
+        neutral = Color.SURFACE
+        row_colors = [neutral, neutral, neutral, status_color, neutral]
         self.row_background_colors.append(row_colors)
 
         self.table.resizeColumnsToContents()
@@ -432,7 +426,8 @@ class ResultsWindow(QWidget):
     def _text_color_for_bg(self, color: QColor) -> str:
         # calcula luminancia para elegir blanco o negro
         lum = 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue()
-        return "#ffffff" if lum < 128 else "#000000"
+        # Los tres fondos de estado son oscuros, asi que el texto va claro.
+        return Color.TEXT_ON_ACCENT if lum < 128 else Color.WINDOW
 
     def adjust_window_size(self):
         # mismo enfoque de ajuste que CompareEXR
