@@ -51,8 +51,7 @@ La elección se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_B\Enabled
 
 Escanea todos los nodos Read del script y detecta secuencias EXR con frames faltantes.<br>
 Muestra una tabla con la ruta del archivo, el nombre del Read, el rango detectado y los frames ausentes para localizar rápidamente problemas de media antes de renderizar o publicar.
-
-<br>
+<br><br>
 <img src="Doc_Media/media_missing_frames_shortcut.svg" alt="Media Missing Frames shortcut" width="240" height="43">
 
 <br>
@@ -63,8 +62,7 @@ Muestra una tabla con la ruta del archivo, el nombre del Read, el rango detectad
 
 Ejecuta el comando **reload** sobre todos los nodos Read del script actual.<br>
 Útil cuando se actualizó media en disco y se quiere refrescar todo el proyecto de una sola vez.
-
-<br>
+<br><br>
 <img src="Doc_Media/reload_all_reads_shortcut.svg" alt="Reload all Reads shortcut" width="240" height="43">
 
 <br>
@@ -75,8 +73,7 @@ Ejecuta el comando **reload** sobre todos los nodos Read del script actual.<br>
 
 Renombra los nodos Write seleccionados usando el nombre del archivo del Read conectado aguas arriba.<br>
 Elimina el padding final después del último guion bajo para dejar un nombre más limpio y consistente en los Writes.
-
-<br>
+<br><br>
 <img src="Doc_Media/rename_writes_from_reads_shortcut.svg" alt="Rename Writes from Reads shortcut" width="165" height="43">
 
 <br>
@@ -109,8 +106,7 @@ Antes de escribir, crea siempre un backup **.back** del archivo **FileChooser_Fa
 
 Copia el rango de frames de un nodo Read seleccionado a uno o más nodos FrameRange seleccionados.<br>
 La herramienta requiere seleccionar exactamente un Read y al menos un FrameRange.
-
-<br>
+<br><br>
 <img src="Doc_Media/read_to_framerange_shortcut.svg" alt="Read to FrameRange shortcut" width="180" height="43">
 
 <br>
@@ -130,8 +126,7 @@ Sirve para dejar los Writes limitados al rango correcto sin editar cada nodo man
 
 Copia el rango de frames de un nodo TimeClip al nodo Write seleccionado.<br>
 La herramienta requiere seleccionar exactamente un Write y un TimeClip.
-
-<br>
+<br><br>
 <img src="Doc_Media/timeclip_to_write_shortcut.svg" alt="TimeClip to Write shortcut" width="165" height="43">
 
 <br>
@@ -147,8 +142,7 @@ La herramienta requiere seleccionar exactamente un Write y un TimeClip.
 Pega los nodos del portapapeles a todos los nodos seleccionados.<br>
 ![](Doc_Media/image30.png)
 ![](Doc_Media/image26.png)
-
-<br>
+<br><br>
 <img src="Doc_Media/paste_to_selected_shortcut.svg" alt="Paste to selected shortcut" width="200" height="43">
 
 <br>
@@ -161,8 +155,7 @@ Pega los nodos del portapapeles a todos los nodos seleccionados.<br>
 Duplica los nodos seleccionados y mantiene todas sus conexiones con nodos que no están en la selección. Se pueden duplicar los nodos directamente o copiarlos primero y pegarlos en otro lugar del script más tarde.<br>
 ![](Doc_Media/image20.png)
 ![](Doc_Media/image10.png)
-
-<br>
+<br><br>
 <img src="Doc_Media/duplicate_with_inputs_shortcut.svg" alt="Duplicate with inputs shortcuts" width="320" height="88">
 
 <br>
@@ -198,8 +191,7 @@ Se accede desde el menú contextual de cualquier knob animable con **Right click
 
 Permite editar un mismo knob sobre múltiples nodos al mismo tiempo desde una sola interfaz.<br>
 Es útil para cambios masivos rápidos cuando hay que igualar parámetros entre varios nodos seleccionados.
-
-<br>
+<br><br>
 <img src="Doc_Media/multi_knob_edit_shortcut.svg" alt="Multi Knob Edit shortcut" width="165" height="43">
 
 <br>
@@ -222,8 +214,7 @@ Incluye integración con el menú **Animation** para crear nuevos `knobDefault`,
 
 Duplica un nodo **OCIOFileTransform** seleccionado, conserva su configuración y prepara una copia rotulada como **MOV Render**.<br>
 Además asigna el nodo original como **Input Process** en los viewers disponibles para acelerar el setup de visualización y render.
-
-<br>
+<br><br>
 <img src="Doc_Media/ociofiletransform_setup_shortcut.svg" alt="OCIOFileTransform Setup shortcut" width="230" height="43">
 
 <br>
