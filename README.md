@@ -5,8 +5,6 @@
 </p>
 <br clear="left">
 
-
-
 ## Instalación
 
 - Copiar la carpeta **LGA_ToolPack-B** que contiene todos los archivos del ToolPack-B a **%USERPROFILE%/.nuke**.<br> Debería quedar así:
@@ -26,7 +24,6 @@
 
 - El pack permite **activar/desactivar** herramientas desde el menú **TP2 > Enable Tools**, que se explica acá abajo.
 
-
 <br>
 
 
@@ -42,10 +39,10 @@ La elección se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_B\Enabled
 
 <br>
 
+
+
 <br><br>
 <img src="Doc_Media/read_n_write.svg" alt="READ n WRITE" width="262" height="33">
-
-
 
 ## <img src="Doc_Media/image7.png" alt="" width="6" height="16" style="margin-right:3px;"> Media Missing Frames v1.1 | Lega
 
@@ -167,6 +164,8 @@ Duplica los nodos seleccionados y mantiene todas sus conexiones con nodos que no
 
 Esta sección agrupa herramientas para construir setups, editar knobs o acelerar tareas repetitivas dentro del script.
 
+<br>
+
 
 
 ## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> DasGrain Kronos Comp v1.1 | Lega
@@ -243,3 +242,5 @@ También registra el panel dentro del menú **Pane** para dejarlo disponible com
 
 Abre una interfaz para revisar y editar shortcuts del menú de Nuke.<br>
 La herramienta se integra al arranque del ToolPack-B y permite redefinir teclas sin editar manualmente `menu.py`.
+
+<br>

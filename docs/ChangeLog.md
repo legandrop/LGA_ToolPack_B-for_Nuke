@@ -2,6 +2,8 @@
 
 ## v1.09
 
+- El README pasa por la misma pasada mecánica que emparejó a los otros dos packs, que sólo le cambia el andamiaje de aire de tres secciones. Los tres READMEs quedan con la misma forma. [ ToolPack B - Emparejar el andamiaje del README con el de los otros packs ]
+
 - La placa del shortcut vuelve al párrafo del texto, a un salto de distancia en vez de dos. Medido sobre el render de GitHub, del final de la última línea al borde de la placa: 59 px cuando la placa arrancaba párrafo propio, 27 px así, que es exactamente la separación que tienen las del ToolPack. El SVG casi no aporta aire propio —la línea base de "Shortcut:" está en y=18 de una caja de 46, o sea unos 6 px arriba de la mayúscula—, así que la distancia la pone el markup y no el archivo. El aire de las secciones que terminan en imagen y el de los banners, que era el defecto real de la tanda anterior, queda como estaba. [ ToolPack B - Acercar la placa del shortcut al texto ]
 
 - **El aire del README, revisado contra el render de verdad.** Las placas de shortcut iban separadas del texto sólo por dos `<br>` adentro del mismo párrafo, y las secciones que terminan en una imagen —`CopyCat Cleaner`, `Paste to selected`— dejaban al título siguiente pegado a esa imagen. Ahora tanto la placa como el `<br>` de cierre arrancan párrafo propio, así la separación no depende de que el renderer respete dos saltos seguidos. Los banners de sección (`FRAME RANGE`, `COPY n PASTE`, `NODE BUILDS`, `VA`) recuperan el aire de arriba, que se había perdido al emparejar los separadores.
