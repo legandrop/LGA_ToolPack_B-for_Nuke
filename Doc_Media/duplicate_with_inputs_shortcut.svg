@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="345" height="94" viewBox="0 0 345 94" role="img" aria-label="Duplicate with inputs shortcuts">
+  <text x="0" y="18" fill="#8a8a8a" font-size="16" font-weight="700" font-family="Segoe UI, Arial, Helvetica, sans-serif">Shortcuts:</text>
+  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Alt + C</tspan>
+    <tspan> [copy with inputs]</tspan>
+  </text>
+  <text x="0" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Alt + V</tspan>
+    <tspan> [paste with inputs]</tspan>
+  </text>
+  <text x="0" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Alt + K</tspan>
+    <tspan> [duplicate with inputs]</tspan>
+  </text>
+</svg>

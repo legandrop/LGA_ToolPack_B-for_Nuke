@@ -2,6 +2,14 @@
 
 ## v1.09
 
+- **El README pasa a estar escrito como el del ToolPack.** Los títulos llevaban el autor después de un guión y el shortcut metido adentro del título en itálica —`Media Missing Frames v1.1 - Lega | *Ctrl + Alt + Shift + M*`—, mientras que en el ToolPack el autor va después de un `|` y el shortcut se muestra al final de la sección, en la placa gris. Ahora es igual en los dos: `Nombre vX.X | Autor`, y nueve placas SVG nuevas en `Doc_Media` con los shortcuts que declara el menú, generadas con el mismo formato que las del ToolPack. Los tres atajos de `Duplicate with inputs`, que estaban como texto suelto abajo de la sección, entran en una sola placa de tres líneas.
+
+  La sección **COPY n PASTE** era la única cuyo banner era un `<span>` con color en vez de un SVG como las otras cuatro; ahora es `copy_n_paste.svg`, en el mismo verde que tenía. De paso se empareja el aire entre secciones, que iba de dos a seis líneas en blanco y con `<br><br>` colgados arriba de los títulos.
+
+  Dos versiones estaban atrasadas en el título respecto del `.py`: `CopyCat Cleaner` (v1.0 → v1.02) y `Update Folder Favs` (v1.00 → v1.01). Y las de las herramientas de terceros se verifican contra el código: `Edit Default Knobs Values` es v5.0.0 de Simon Jokuschies —el título no decía ni versión ni autor—, `Edit Keyboard Shortcuts` v1.2 de dbr, y a `Multi Knob Edit` se le deja el autor sin versión, porque el archivo no declara ninguna.
+
+  **Se borra la sección de `Media path replacer`**, que documentaba una herramienta que este pack no tiene: no está en `py/`, no la registra el menú ni aparece en Enable Tools. Vive en el ToolPack, donde está documentada como v2.03. [ ToolPack B - Alinear el README al del ToolPack ]
+
 - **`Enable Tools` tiene sección propia en el README.** Estaba documentada sólo como una viñeta adentro de Instalación: sin captura, sin versión y contando el archivo de config al lado de los pasos de instalar, que es donde nadie lo busca después. Ahora es una sección como las demás, con la captura de la ventana, qué hace destildar una tool —se oculta del menú y además no se carga—, dónde vive el ini y qué hacen All On, All Off y Reset. La viñeta de Instalación queda en una línea que apunta a la sección, así el dato del ini está en un solo lugar.
 
   El título de la sección lleva la versión, que por regla del pack hay que mover junto con el header del `.py`; el header de `LGA_ToolPackB_EnabledPanel.py` lo deja asentado, porque hasta ahora decía que la versión no se veía en ningún otro lado. La sección va sin el bullet de categoría que usan las demás: `Enable Tools` no vive adentro de ninguna. [ EnableTools - Documentar la tool en el README ]
