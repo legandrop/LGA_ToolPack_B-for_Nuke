@@ -51,7 +51,8 @@ La elección se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_B\Enabled
 
 Escanea todos los nodos Read del script y detecta secuencias EXR con frames faltantes.<br>
 Muestra una tabla con la ruta del archivo, el nombre del Read, el rango detectado y los frames ausentes para localizar rápidamente problemas de media antes de renderizar o publicar.
-<br><br>
+
+<br>
 <img src="Doc_Media/media_missing_frames_shortcut.svg" alt="Media Missing Frames shortcut" width="240" height="43">
 
 <br>
@@ -62,7 +63,8 @@ Muestra una tabla con la ruta del archivo, el nombre del Read, el rango detectad
 
 Ejecuta el comando **reload** sobre todos los nodos Read del script actual.<br>
 Útil cuando se actualizó media en disco y se quiere refrescar todo el proyecto de una sola vez.
-<br><br>
+
+<br>
 <img src="Doc_Media/reload_all_reads_shortcut.svg" alt="Reload all Reads shortcut" width="240" height="43">
 
 <br>
@@ -73,7 +75,8 @@ Ejecuta el comando **reload** sobre todos los nodos Read del script actual.<br>
 
 Renombra los nodos Write seleccionados usando el nombre del archivo del Read conectado aguas arriba.<br>
 Elimina el padding final después del último guion bajo para dejar un nombre más limpio y consistente en los Writes.
-<br><br>
+
+<br>
 <img src="Doc_Media/rename_writes_from_reads_shortcut.svg" alt="Rename Writes from Reads shortcut" width="165" height="43">
 
 <br>
@@ -85,6 +88,7 @@ Elimina el padding final después del último guion bajo para dejar un nombre m�
 Analiza todos los nodos Inference del script, compara el modelo .cat usado con el más reciente disponible en su carpeta y permite limpiar versiones antiguas junto con sus imágenes de entrenamiento.<br>
 Muestra los resultados en una tabla con estado (Match / Outdated / Missing) y un botón Clean para mover los archivos no usados a una carpeta “clean” paralela.<br><br>
 ![](Doc_Media/image2.png)
+
 <br>
 
 
@@ -93,17 +97,20 @@ Muestra los resultados en una tabla con estado (Match / Outdated / Missing) y un
 
 Detecta si Nuke/Hiero está corriendo en **Windows** o **macOS**, verifica la ubicación de **Desktop** y del volumen **T:** correspondiente, escanea todas las carpetas que empiezan con **VFX-** y muestra un diálogo con el detalle de los cambios que se van a aplicar en los favoritos del file browser.<br>
 Antes de escribir, crea siempre un backup **.back** del archivo **FileChooser_Favorites.pref** y actualiza únicamente los favoritos administrados por la herramienta, manteniendo intactos los demás.
+
 <br>
 
 
 
+<br><br>
 <img src="Doc_Media/frame_range.svg" alt="FRAME RANGE" width="245" height="33">
 
 ## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> Read -> FrameRange v1.0 | Lega
 
 Copia el rango de frames de un nodo Read seleccionado a uno o más nodos FrameRange seleccionados.<br>
 La herramienta requiere seleccionar exactamente un Read y al menos un FrameRange.
-<br><br>
+
+<br>
 <img src="Doc_Media/read_to_framerange_shortcut.svg" alt="Read to FrameRange shortcut" width="180" height="43">
 
 <br>
@@ -114,6 +121,7 @@ La herramienta requiere seleccionar exactamente un Read y al menos un FrameRange
 
 Activa **use limit** en todos los nodos Write del script y ajusta su rango para que coincida con el frame range detectado en su contexto actual.<br>
 Sirve para dejar los Writes limitados al rango correcto sin editar cada nodo manualmente.
+
 <br>
 
 
@@ -122,13 +130,15 @@ Sirve para dejar los Writes limitados al rango correcto sin editar cada nodo man
 
 Copia el rango de frames de un nodo TimeClip al nodo Write seleccionado.<br>
 La herramienta requiere seleccionar exactamente un Write y un TimeClip.
-<br><br>
+
+<br>
 <img src="Doc_Media/timeclip_to_write_shortcut.svg" alt="TimeClip to Write shortcut" width="165" height="43">
 
 <br>
 
 
 
+<br><br>
 <img src="Doc_Media/copy_n_paste.svg" alt="COPY n PASTE" width="185" height="31">
 
 ## <img src="Doc_Media/image18.png" alt="" width="6" height="16" style="margin-right:3px;"> Paste to selected v1.1 | Frank Rueter
@@ -137,7 +147,8 @@ La herramienta requiere seleccionar exactamente un Write y un TimeClip.
 Pega los nodos del portapapeles a todos los nodos seleccionados.<br>
 ![](Doc_Media/image30.png)
 ![](Doc_Media/image26.png)
-<br><br>
+
+<br>
 <img src="Doc_Media/paste_to_selected_shortcut.svg" alt="Paste to selected shortcut" width="200" height="43">
 
 <br>
@@ -150,13 +161,15 @@ Pega los nodos del portapapeles a todos los nodos seleccionados.<br>
 Duplica los nodos seleccionados y mantiene todas sus conexiones con nodos que no están en la selección. Se pueden duplicar los nodos directamente o copiarlos primero y pegarlos en otro lugar del script más tarde.<br>
 ![](Doc_Media/image20.png)
 ![](Doc_Media/image10.png)
-<br><br>
+
+<br>
 <img src="Doc_Media/duplicate_with_inputs_shortcut.svg" alt="Duplicate with inputs shortcuts" width="320" height="88">
 
 <br>
 
 
 
+<br><br>
 <img src="Doc_Media/node_builds.svg" alt="NODE BUILDS" width="235" height="33">
 
 Esta sección agrupa herramientas para construir setups, editar knobs o acelerar tareas repetitivas dentro del script.
@@ -167,6 +180,7 @@ Esta sección agrupa herramientas para construir setups, editar knobs o acelerar
 
 Sincroniza la intensidad del grano de un nodo **DasGrain** con la interpolación de un nodo **Kronos**.<br>
 Agrega un tab **KroComp** al DasGrain seleccionado, crea knobs de control y modifica la expresión del knob **luminance** para compensar el grano en frames interpolados.
+
 <br>
 
 
@@ -175,6 +189,7 @@ Agrega un tab **KroComp** al DasGrain seleccionado, crea knobs de control y modi
 
 Agrega un editor visual para construir expresiones de animación con eases, loops y waves sobre knobs animables.<br>
 Se accede desde el menú contextual de cualquier knob animable con **Right click > Animation Maker**.
+
 <br>
 
 
@@ -183,7 +198,8 @@ Se accede desde el menú contextual de cualquier knob animable con **Right click
 
 Permite editar un mismo knob sobre múltiples nodos al mismo tiempo desde una sola interfaz.<br>
 Es útil para cambios masivos rápidos cuando hay que igualar parámetros entre varios nodos seleccionados.
-<br><br>
+
+<br>
 <img src="Doc_Media/multi_knob_edit_shortcut.svg" alt="Multi Knob Edit shortcut" width="165" height="43">
 
 <br>
@@ -194,17 +210,20 @@ Es útil para cambios masivos rápidos cuando hay que igualar parámetros entre 
 
 Abre una ventana para definir, listar y resetear valores por defecto de knobs en Nuke.<br>
 Incluye integración con el menú **Animation** para crear nuevos `knobDefault`, revisar la lista activa y restaurar valores.
+
 <br>
 
 
 
+<br><br>
 <img src="Doc_Media/va.svg" alt="VA" width="55" height="33">
 
 ## <img src="Doc_Media/image13.png" alt="" width="6" height="16" style="margin-right:3px;"> OCIOFileTransform Setup v1.0 | Lega
 
 Duplica un nodo **OCIOFileTransform** seleccionado, conserva su configuración y prepara una copia rotulada como **MOV Render**.<br>
 Además asigna el nodo original como **Input Process** en los viewers disponibles para acelerar el setup de visualización y render.
-<br><br>
+
+<br>
 <img src="Doc_Media/ociofiletransform_setup_shortcut.svg" alt="OCIOFileTransform Setup shortcut" width="230" height="43">
 
 <br>
@@ -215,14 +234,16 @@ Además asigna el nodo original como **Input Process** en los viewers disponible
 
 Lee un archivo CDL desde un nodo **Read** u **OCIOCDLTransform**, genera un archivo **.cc** y crea nodos **OCIOFileTransform** para usarlo tanto en render como en el Input Process del viewer.<br>
 Sirve para convertir grades CDL en un setup práctico de visualización y salida dentro del script.
+
 <br>
 
 
 
-## <img src="Doc_Media/image13.png" alt="" width="6" height="16" style="margin-right:3px;"> Performance Timers
+## <img src="Doc_Media/image13.png" alt="" width="6" height="16" style="margin-right:3px;"> Performance Timers | Sebastian Schütt
 
 Abre un panel con controles para iniciar, detener y resetear los performance timers de Nuke.<br>
 También registra el panel dentro del menú **Pane** para dejarlo disponible como panel acoplable.
+
 <br>
 
 

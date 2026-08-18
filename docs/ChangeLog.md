@@ -2,6 +2,12 @@
 
 ## v1.09
 
+- **El aire del README, revisado contra el render de verdad.** Las placas de shortcut iban separadas del texto sólo por dos `<br>` adentro del mismo párrafo, y las secciones que terminan en una imagen —`CopyCat Cleaner`, `Paste to selected`— dejaban al título siguiente pegado a esa imagen. Ahora tanto la placa como el `<br>` de cierre arrancan párrafo propio, así la separación no depende de que el renderer respete dos saltos seguidos. Los banners de sección (`FRAME RANGE`, `COPY n PASTE`, `NODE BUILDS`, `VA`) recuperan el aire de arriba, que se había perdido al emparejar los separadores.
+
+  Se verificó rasterizando el README ya renderizado por GitHub, no leyendo el markdown: el defecto no se veía en el fuente, que era igual al del ToolPack, sino en la página.
+
+  `Performance Timers` pasa a acreditar a **Sebastian Schütt** (Split The Diff), que faltaba. Y queda resuelta la versión de `Duplicate with inputs`: nukepedia publica v1.3 y esa entrega es la que agrega copiar y pegar, que es justo lo que tiene el archivo del pack (`copyWithInputs` / `pasteWithInputs`), así que el título va bien en v1.3 y lo que está atrasado es el `V1.1` del header del script, que viene así de upstream y no se toca por ser de terceros. [ ToolPack B - Emparejar el aire del README y acreditar Performance Timers ]
+
 - **El README pasa a estar escrito como el del ToolPack.** Los títulos llevaban el autor después de un guión y el shortcut metido adentro del título en itálica —`Media Missing Frames v1.1 - Lega | *Ctrl + Alt + Shift + M*`—, mientras que en el ToolPack el autor va después de un `|` y el shortcut se muestra al final de la sección, en la placa gris. Ahora es igual en los dos: `Nombre vX.X | Autor`, y nueve placas SVG nuevas en `Doc_Media` con los shortcuts que declara el menú, generadas con el mismo formato que las del ToolPack. Los tres atajos de `Duplicate with inputs`, que estaban como texto suelto abajo de la sección, entran en una sola placa de tres líneas.
 
   La sección **COPY n PASTE** era la única cuyo banner era un `<span>` con color en vez de un SVG como las otras cuatro; ahora es `copy_n_paste.svg`, en el mismo verde que tenía. De paso se empareja el aire entre secciones, que iba de dos a seis líneas en blanco y con `<br><br>` colgados arriba de los títulos.
