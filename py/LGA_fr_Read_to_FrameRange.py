@@ -1,13 +1,26 @@
 """
 ______________________________________________________________________________________________
 
-  LGA_fr_Read_to_FrameRange v1.0 | Lega
+  LGA_fr_Read_to_FrameRange v1.01 | Lega
   Sets the frame range of the Frame Range node to match the frame range of the selected Read
+
+  v1.01: Los carteles salen del helper de carteles del pack
+         (show_warning) en vez de nuke.message, con fallback.
+  v1.00: Version anterior (v1.0), sin changelog interno.
 ______________________________________________________________________________________________
 
 """
 
 import nuke
+
+# Carteles estilados del pack. Con fallback al cartel de Nuke: este script
+# tiene que correr aunque el helper no este instalado.
+try:
+    from LGA_UI_MessageBox_ToolPackB import show_warning
+except ImportError:
+
+    def show_warning(parent, title, text):
+        nuke.message(text)
 
 
 def set_frame_range_from_read():
@@ -20,12 +33,12 @@ def set_frame_range_from_read():
 
     # Verificar si hay exactamente un nodo Read seleccionado
     if len(read_nodes) != 1:
-        nuke.message("You must select exactly one Read node.")
+        show_warning(None, "Read -> FrameRange", "You must select exactly one Read node.")
         return
 
     # Verificar si hay al menos un nodo FrameRange seleccionado
     if not framerange_nodes:
-        nuke.message("You must select at least one FrameRange node.")
+        show_warning(None, "Read -> FrameRange", "You must select at least one FrameRange node.")
         return
 
     # Nodo Read seleccionado

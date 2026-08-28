@@ -1,9 +1,12 @@
 """
 ________________________________________
 
-  LGA_UpdateFolderFavs v1.01 | Lega
+  LGA_UpdateFolderFavs v1.02 | Lega
   Actualiza los favoritos de carpetas
 
+  v1.02: Los carteles salen del helper de carteles del pack (info para
+         el resultado, error para los fallos) en vez de nuke.message,
+         con fallback si falta el helper o no hay Qt.
   v1.01: El look sale del modulo de estilo del pack. La ventana no
          fijaba fondo propio y heredaba el tema del host, y el boton
          de accion estaba a la izquierda del Cancel.
@@ -63,6 +66,19 @@ except Exception:
     QAbstractItemView = QStyle = QStyledItemDelegate = None
     QPalette = QFont = QColor = Qt = None
     QT_AVAILABLE = False
+
+# Carteles estilados del pack. Con fallback al cartel de Nuke: este script
+# tiene que correr aunque falte el helper (o sin Qt, donde el helper no
+# importa; los callsites ya estan detras de `if nuke:`).
+try:
+    from LGA_UI_MessageBox_ToolPackB import show_info, show_error
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 
 PREF_FILENAME = "FileChooser_Favorites.pref"
@@ -265,7 +281,7 @@ if QT_AVAILABLE:
                 )
             except Exception as exc:
                 if nuke:
-                    nuke.message(f"Update Folder Favs\n\nNo se pudieron aplicar los cambios:\n{exc}")
+                    show_error(None, "Update Folder Favs", f"Update Folder Favs\n\nNo se pudieron aplicar los cambios:\n{exc}")
                 else:
                     print(f"ERROR: {exc}")
                 return
@@ -278,7 +294,7 @@ if QT_AVAILABLE:
             result_lines.extend(summarize_entries(final_entries))
 
             if nuke:
-                nuke.message("\n".join(result_lines))
+                show_info(None, "Update Folder Favs", "\n".join(result_lines))
             else:
                 print("\n".join(result_lines))
             self.close()
@@ -581,7 +597,7 @@ def show_ui(platform_name: str | None = None) -> int:
         _, current_entries, new_entries = build_updated_lines(pref_path, config)
     except Exception as exc:
         if nuke:
-            nuke.message(f"Update Folder Favs\n\n{exc}")
+            show_error(None, "Update Folder Favs", f"Update Folder Favs\n\n{exc}")
         else:
             print(f"ERROR: {exc}")
         return 1

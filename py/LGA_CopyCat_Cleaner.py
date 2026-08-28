@@ -1,9 +1,13 @@
 """
 _______________________________________
 
-  LGA_CopyCat_Cleaner v1.02 | Lega
+  LGA_CopyCat_Cleaner v1.03 | Lega
   Verifica que los nodos Inference usen el .cat mas alto en su carpeta
 
+  v1.03: La ventana de progreso y los carteles salen del modulo de
+         estilo: ProgressWindow con el fondo y la barra del pack, el
+         aviso de error por show_warning y el "Clean complete" por
+         styled_message_box. Antes los tres iban con el tema del host.
   v1.02: El look sale del modulo de estilo del pack. La paleta por
          nivel de directorio estaba copiada a mano del Media Manager,
          asi que podia derivar sin que nada avisara.
@@ -13,7 +17,8 @@ _______________________________________
 """
 
 from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore
-from LGA_UI_Style_ToolPackB import PATH_PALETTE, Color, Style
+from LGA_UI_Style_ToolPackB import PATH_PALETTE, Color, Style, apply_ui_font
+from LGA_UI_MessageBox_ToolPackB import show_warning, styled_message_box
 
 QApplication = QtWidgets.QApplication
 QWidget = QtWidgets.QWidget
@@ -459,13 +464,20 @@ class ProgressWindow(QWidget):
     def __init__(self, parent=None):
         super(ProgressWindow, self).__init__(parent)
         self.setWindowTitle("CopyCat Model Checker - Scanning")
+        # Un QWidget pelado no pinta el background del QSS sin este atributo:
+        # la hoja gana en especificidad y no se dibuja un solo pixel.
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet(Style.WINDOW)
         layout = QVBoxLayout(self)
         self.label = QLabel("Scanning Inference nodes...", self)
         self.progress = QProgressBar(self)
+        self.progress.setStyleSheet(Style.PROGRESS)
         self.progress.setRange(0, 0)  # indeterminado hasta conocer total
         layout.addWidget(self.label)
         layout.addWidget(self.progress)
         self.setLayout(layout)
+        # Despues de armar la ventana, para alcanzar a los hijos ya creados.
+        apply_ui_font(self)
 
     def set_progress(self, current: int, total: int):
         if total <= 0:
@@ -616,13 +628,14 @@ class CopyCatCleanerController(QObject):
             self.progress_window = None
 
         if error_message:
-            QMessageBox.warning(None, "Clean error", error_message)
+            show_warning(None, "Clean error", error_message)
             return
 
-        # Mensaje de exito con opcion a abrir la carpeta
-        msg = QMessageBox()
-        msg.setWindowTitle("Clean complete")
-        msg.setText(self._format_clean_summary(clean_folder))
+        # Mensaje de exito con opcion a abrir la carpeta. Cartel a medida:
+        # styled_message_box lo devuelve ya estilado y conserva los botones.
+        msg = styled_message_box(
+            None, "Clean complete", self._format_clean_summary(clean_folder)
+        )
         go_btn = msg.addButton("Open Clean Folder", QMessageBox.ActionRole)
         msg.addButton("Close", QMessageBox.RejectRole)
         msg.exec_()

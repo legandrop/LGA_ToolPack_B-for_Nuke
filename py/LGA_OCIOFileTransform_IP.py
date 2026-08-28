@@ -1,13 +1,29 @@
 """
 _____________________________________________________________________________________________
 
-  LGA_OCIOFileTransform_IP v1.0 | Lega
+  LGA_OCIOFileTransform_IP v1.01 | Lega
   Duplica un OCIOFileTransform seleccionado, configura labels y asigna Input Process
+
+  v1.01: Los carteles salen del helper de carteles del pack (warning
+         para seleccion invalida, error para fallos), con fallback.
+  v1.00: Version anterior (v1.0), sin changelog interno.
 _____________________________________________________________________________________________
 
 """
 
 import nuke
+
+# Carteles estilados del pack. Con fallback al cartel de Nuke: este script
+# tiene que correr aunque el helper no este instalado.
+try:
+    from LGA_UI_MessageBox_ToolPackB import show_warning, show_error
+except ImportError:
+
+    def show_warning(parent, title, text):
+        nuke.message(text)
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 
 def setup_ocio_file_transform():
@@ -20,14 +36,14 @@ def setup_ocio_file_transform():
 
     # Verificar que hay exactamente un nodo seleccionado
     if len(selected_nodes) != 1:
-        nuke.message("Debes seleccionar exactamente un nodo OCIOFileTransform.")
+        show_warning(None, "OCIOFileTransform Setup", "Debes seleccionar exactamente un nodo OCIOFileTransform.")
         return
 
     selected_node = selected_nodes[0]
 
     # Verificar que es un OCIOFileTransform
     if selected_node.Class() != "OCIOFileTransform":
-        nuke.message("El nodo seleccionado debe ser un OCIOFileTransform.")
+        show_warning(None, "OCIOFileTransform Setup", "El nodo seleccionado debe ser un OCIOFileTransform.")
         return
 
     print(f"Procesando OCIOFileTransform: {selected_node.name()}")
@@ -90,7 +106,7 @@ def setup_ocio_file_transform():
         print("✓ Ambos nodos seleccionados para visualizacion")
 
     except Exception as e:
-        nuke.message(f"Error al duplicar el nodo: {str(e)}")
+        show_error(None, "OCIOFileTransform Setup", f"Error al duplicar el nodo: {str(e)}")
         print(f"Error: {str(e)}")
         return
 

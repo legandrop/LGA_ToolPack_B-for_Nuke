@@ -1,8 +1,12 @@
 """
 _____________________________________
 
-  LGA_ToolPack B | Lega
+  LGA_ToolPackB_menu v1.01 | Lega
   Colección de herramientas de Nuke
+
+  v1.01: El cartel de Animation Maker sale del helper de carteles del
+         pack (show_info) en vez de nuke.message, con fallback.
+  v1.00: Version anterior, sin changelog interno.
 _____________________________________
 
 """
@@ -33,6 +37,16 @@ PRODUCT_VERSION = _read_product_version()
 
 # Carga los modulos runtime desde py/
 nuke.pluginAddPath(PY_DIR.replace("\\", "/"))
+
+# Carteles estilados del pack. Con fallback al cartel de Nuke: el menu tiene
+# que armarse aunque falte el helper. Va despues del pluginAddPath, que es lo
+# que hace importable a py/.
+try:
+    from LGA_UI_MessageBox_ToolPackB import show_info
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
 
 
 # --- Config loader & helpers (igual que ToolPack) ----------------------------
@@ -294,8 +308,8 @@ if is_enabled("AnimationMaker"):
 
     n2.addCommand(
         "  Animation Maker",
-        lambda: nuke.message(
-            "Right click on any knob and select Animation Maker"
+        lambda: show_info(
+            None, "Animation Maker", "Right click on any knob and select Animation Maker"
         ),
         icon=icon_Knobs,
     )

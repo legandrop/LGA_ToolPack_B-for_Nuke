@@ -1,8 +1,12 @@
 """
 ________________________________________________________________________________
 
-  LGA_mediaMissingFrames v1.1 | Lega
+  LGA_mediaMissingFrames v1.11 | Lega
   Scans all Read nodes in the script for any EXR sequences with missing frames
+
+  v1.11: El look sale del modulo de estilo del pack: fondo de ventana
+         y tabla con la hoja comun. Antes heredaba el tema del host.
+  v1.10: Version anterior (v1.1), sin changelog interno.
 ________________________________________________________________________________
 
 """
@@ -28,6 +32,9 @@ except ImportError:
     # Fallback
     from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, QtCore
 
+# El look sale del modulo de estilo del pack, que vive junto a este archivo.
+from LGA_UI_Style_ToolPackB import Style
+
 # Alias para mantener compatibilidad con el codigo existente
 QApplication = QtWidgets.QApplication
 QWidget = QtWidgets.QWidget
@@ -49,10 +56,15 @@ class ReadNodeInfo(QWidget):
 
     def initUI(self):
         self.setWindowTitle("Read Nodes EXR Info")
+        # Un QWidget pelado no pinta el background del QSS sin este atributo.
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet(Style.WINDOW)
         layout = QVBoxLayout(self)
 
         # Create the table
         self.table = QTableWidget(0, 6, self)  # Start with 0 rows and 5 columns now
+        # Ningun delegado pinta fondos aca, asi que la hoja comun aplica entera.
+        self.table.setStyleSheet(Style.TABLE)
         self.table.setHorizontalHeaderLabels(
             ["Path", "Read Node", "IN", "OUT", "Frames", "Missing Frames"]
         )

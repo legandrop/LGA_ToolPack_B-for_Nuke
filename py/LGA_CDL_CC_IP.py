@@ -1,19 +1,32 @@
 """
 ___________________________________________________________________________________________________
 
-  LGA_CDL_CC_IP v1.0 | Lega
+  LGA_CDL_CC_IP v1.01 | Lega
 
   Herramienta para exportar los valores CDL desde un nodo Read o OCIOCDLTransform y convertirlos
   en un archivo .cc que se guarda en el mismo directorio que el archivo CDL original.
 
   Crea dos nodos OCIOFileTransform:
   uno para el renderizado de MOV y otro configurado como el Input Process activo.
+
+  v1.01: Los carteles de error salen del helper de carteles del pack
+         (show_error) en vez de nuke.message, con fallback si falta.
+  v1.00: Version anterior (v1.0), sin changelog interno.
 ___________________________________________________________________________________________________
 
 """
 
 import nuke
 import os
+
+# Carteles estilados del pack. Con fallback al cartel de Nuke: este script
+# tiene que correr aunque el helper no este instalado.
+try:
+    from LGA_UI_MessageBox_ToolPackB import show_error
+except ImportError:
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 # Variable global para activar o desactivar los prints
 DEBUG = False
@@ -151,19 +164,19 @@ def read_cdl_values(cdl_path):
 
     # Chequea si se encontraron todos los valores necesarios o tira mensaje de error
     if slope is None:
-        nuke.message("Error: No se encontro el valor de Slope en el archivo CDL.")
+        show_error(None, "CDL -> CC Input Process", "Error: No se encontro el valor de Slope en el archivo CDL.")
         raise ValueError("Falta el valor de Slope")
 
     if offset is None:
-        nuke.message("Error: No se encontro el valor de Offset en el archivo CDL.")
+        show_error(None, "CDL -> CC Input Process", "Error: No se encontro el valor de Offset en el archivo CDL.")
         raise ValueError("Falta el valor de Offset")
 
     if power is None:
-        nuke.message("Error: No se encontro el valor de Power en el archivo CDL.")
+        show_error(None, "CDL -> CC Input Process", "Error: No se encontro el valor de Power en el archivo CDL.")
         raise ValueError("Falta el valor de Power")
 
     if saturation is None:
-        nuke.message("Error: No se encontro el valor de Saturation en el archivo CDL.")
+        show_error(None, "CDL -> CC Input Process", "Error: No se encontro el valor de Saturation en el archivo CDL.")
         raise ValueError("Falta el valor de Saturation")
 
     # Si todos los valores se encontraron, los devuelve como una tupla
