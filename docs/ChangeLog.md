@@ -2,6 +2,8 @@
 
 ## v1.09
 
+- **`LGA_UI_Style_ToolPackB v1.23`: el shotname va INCLUIDO en el color de parte comun.** En v1.22 el shot arrancaba la paleta, asi que salia de otro color que la raiz que lo precede y la ruta seguia leyendose partida. Ahora todo hasta el shot inclusive va en `PATH_COMMON` y la paleta arranca en el segmento siguiente. La regla se reescribio en `Docu_UI_Style.md` y en los AGENTS.md porque estaba redactada de forma ambigua ("los segmentos anteriores al shot"), que fue lo que hizo que se implementara al reves. [ ToolPack B - Shotname incluido en el color comun ]
+
 - **`LGA_UI_Style_ToolPackB v1.22`: los paths coloreados se anclan en el shotname.** Cuando un segmento de la ruta es un nombre de shot (PROYECTO_SEQ_SHOT_VENDOR), todo lo anterior va en un solo color (el de parte comun) y la paleta por nivel arranca recien en el shot; sin shot detectable se sigue coloreando por nivel desde la raiz. La regla quedo en `Docu_UI_Style.md` de LGA_ToolPack; `colorize_path_pair` y la revision de las ventanas quedan en `ROADMAP.md`. [ ToolPack B - Paths anclados al shotname ]
 
 - **`LGA_UI_Style_ToolPackB v1.21`: `Style.TABLE` incluye el bloque del checkbox.** Un checkbox metido como widget de celda perdía la regla `QCheckBox` de la hoja de la ventana —la hoja propia de la tabla corta esa herencia— y el cuadrito pintaba el palette del host: un rectángulo oscuro alrededor. Mismo cambio en las cuatro copias del módulo, que siguen sincronizadas. En este repo no había ningún checkbox de celda afectado hoy; el fix es preventivo y de paridad. [ ToolPack B - Style.TABLE con el bloque del checkbox ]
