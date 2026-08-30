@@ -177,7 +177,7 @@ Agrega un tab **KroComp** al DasGrain seleccionado, crea knobs de control y modi
 
 
 
-## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> Animation Maker v1.4 | David Emeny 2021
+## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> Animation Maker v1.5 | David Emeny 2025
 
 Agrega un editor visual para construir expresiones de animación con eases, loops y waves sobre knobs animables.<br>
 Se accede desde el menú contextual de cualquier knob animable con **Right click > Animation Maker**.

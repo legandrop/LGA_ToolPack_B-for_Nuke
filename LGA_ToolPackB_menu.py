@@ -306,6 +306,12 @@ if is_enabled("AnimationMaker"):
     # Importar AnimationMaker para que se registre el menú contextual
     import AnimationMaker
 
+    # El propio modulo registra "Animation Maker..." con el comando string
+    # "AnimationMaker.showWindow()", y los botones de la tab que crea en el nodo
+    # guardan PyScripts con "AnimationMaker.remove_tab(...)". Todo eso se evalua
+    # en __main__, asi que el modulo tiene que estar publicado ahi.
+    _export_to_main(AnimationMaker=AnimationMaker)
+
     n2.addCommand(
         "  Animation Maker",
         lambda: show_info(
