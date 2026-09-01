@@ -168,6 +168,15 @@ Esta sección agrupa herramientas para construir setups, editar knobs o acelerar
 
 
 
+## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> Apply AMF v0.11 | Lega
+
+Construye la cadena de color que declara el archivo **.amf** del shot, que vive junto al plate en `_input/Look_Files`.<br>
+Crea unicamente los transforms que el .amf marca como no aplicados -con su archivo y su working space- y los inserta debajo del nodo seleccionado. Si el shot trae varios plates pregunta cual aplicar, y opcionalmente deja una copia suelta asignada como Input Process del Viewer.
+
+<br>
+
+
+
 ## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> DasGrain Kronos Comp v1.1 | Lega
 
 Sincroniza la intensidad del grano de un nodo **DasGrain** con la interpolación de un nodo **Kronos**.<br>

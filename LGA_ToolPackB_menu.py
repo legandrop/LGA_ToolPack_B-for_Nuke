@@ -295,6 +295,15 @@ icon_Knobs = _get_icon("TP_Knobs")
 
 add_tool(
     n2,
+    label="  Apply AMF",
+    key="ApplyAMF",
+    module="LGA_ApplyAMF",
+    attr="main",
+    icon=icon_Knobs,
+)
+
+add_tool(
+    n2,
     label="  DasGrain Kronos Comp",
     key="DasGrain_Kronos_Comp",
     module="LGA_DasGrain_Kronos_Comp",
