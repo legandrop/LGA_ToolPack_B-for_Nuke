@@ -29,4 +29,5 @@
 - Para geometría de pantalla usar `LGA_QtAdapter_ToolPackB.primary_screen_geometry(pos)` (maneja automáticamente QDesktopWidget vs QGuiApplication).
 - Para ancho de texto usar `LGA_QtAdapter_ToolPackB.horizontal_advance(metrics, text)` (compatible Qt5/Qt6 automáticamente).
 - Para márgenes de layout usar `LGA_QtAdapter_ToolPackB.set_layout_margin(layout, margin)` (compatible Qt5/Qt6 automáticamente).
+- Para atajos de teclado usar `QShortcut` importado de `LGA_QtAdapter_ToolPackB` (en Qt6 se mudó de QtWidgets a QtGui; el adapter lo resuelve).
 - Garantizar una sola instancia de `QApplication` (AnimationMaker, mediaMissingFrames, mediaPathReplacer).
