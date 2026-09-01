@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF_Dialogs v1.01 | Lega
+  LGA_ApplyAMF_Dialogs v1.02 | Lega
 
   Los dos carteles de LGA_ApplyAMF: elegir el plate y elegir que hacer
   con la cadena. Van en su propio modulo porque LGA_ApplyAMF.py es
@@ -36,6 +36,10 @@ ____________________________________________________________________
   y no una segunda variante de color del badge. Se evita asi que el pack
   termine con dos lenguajes visuales distintos para "esto esta activo".
 
+  v1.02: Vuelve a usar semibold() para el numero del badge y toma
+         QShortcut del adapter. Las dos cosas se resolvian a mano aca
+         porque el adapter no exportaba QShortcut y semibold() caia en
+         regular; ya estan arregladas en su lugar.
   v1.01: El separador entre filas deja de tener hoja propia -Style.FORM ya
          pinta el QFrame(HLine) por cascada, y el bloque repetia sus mismos
          valores a mano-. El hint pasa a usar de verdad
@@ -49,17 +53,8 @@ ____________________________________________________________________
 ____________________________________________________________________
 """
 
-from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, Qt
-from LGA_UI_Style_ToolPackB import Style, Color, Metric, apply_ui_font
-
-# El adapter del pack (LGA_QtAdapter_ToolPackB.py) expone QtWidgets/QtGui/
-# QtCore pero NO un QShortcut ya resuelto: en PySide6 vive en QtGui, en
-# PySide2 en QtWidgets, y el adapter de ToolPack-B -a diferencia del de
-# HieroTools, que si trae este shim- no lo unifica. Se resuelve aca, con el
-# mismo fallback que ya usa LGA_QtAdapter_HieroTools.py.
-_QShortcut = getattr(QtGui, "QShortcut", None) or getattr(
-    QtWidgets, "QShortcut", None
-)
+from LGA_QtAdapter_ToolPackB import QtWidgets, QtGui, Qt, QShortcut as _QShortcut
+from LGA_UI_Style_ToolPackB import Style, Color, Metric, apply_ui_font, semibold
 
 
 # ============================
@@ -123,15 +118,6 @@ def _make_badge(number, parent=None):
     return badge
 
 
-# Peso del numero del badge. Va por QFont y no por `font-weight` en una hoja
-# -que la regla del pack prohibe- y NO por semibold(): en Nuke 16 los tres
-# archivos de Inter del pack se registran bajo UNA sola familia "Inter", asi
-# que semibold_family() devuelve lo mismo que font_family() y semibold_css()
-# termina emitiendo `font-weight: normal`. Medido renderizando el mismo texto
-# y contando pixeles con tinta: regular 252, semibold() 252 -o sea, ninguna
-# diferencia-, weight 600 341, bold 366. El 600 pedido por QFont es el unico
-# camino que da un peso intermedio real en esta version.
-_BADGE_WEIGHT = 600
 _BADGE_FONT_SIZE = 11
 
 
@@ -148,11 +134,10 @@ def _finalize_fonts(dialog):
     Se buscan por objectName en vez de recibir la lista de filas: asi alcanza
     tambien a los hints, que no cuelgan de ninguna fila.
     """
-    peso = QtGui.QFont.Weight(_BADGE_WEIGHT)
     for badge in dialog.findChildren(QtWidgets.QLabel, "lgaAmfBadge"):
         font = badge.font()
         font.setPixelSize(_BADGE_FONT_SIZE)
-        font.setWeight(peso)
+        semibold(font)
         badge.setFont(font)
 
     for hint in dialog.findChildren(QtWidgets.QLabel, "lgaAmfHint"):
