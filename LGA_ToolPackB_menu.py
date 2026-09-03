@@ -1,9 +1,14 @@
 """
 _____________________________________
 
-  LGA_ToolPackB_menu v1.01 | Lega
+  LGA_ToolPackB_menu v1.02 | Lega
   Colección de herramientas de Nuke
 
+  v1.02: La entrada de NODE BUILDS pasa a llamarse "AMF" a secas, como el
+         resto de la seccion, que nombra lo que la tool construye y no la
+         accion. El key "ApplyAMF" NO se toca: es el que mira Enable Tools
+         y renombrarlo daria por deshabilitada la tool en toda instalacion
+         que ya la tenga configurada.
   v1.01: El cartel de Animation Maker sale del helper de carteles del
          pack (show_info) en vez de nuke.message, con fallback.
   v1.00: Version anterior, sin changelog interno.
@@ -295,7 +300,7 @@ icon_Knobs = _get_icon("TP_Knobs")
 
 add_tool(
     n2,
-    label="  Apply AMF",
+    label="  AMF",
     key="ApplyAMF",
     module="LGA_ApplyAMF",
     attr="main",
