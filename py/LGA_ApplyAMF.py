@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.11 | Lega
+  LGA_ApplyAMF v0.12 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -19,9 +19,11 @@ ____________________________________________________________________
       primero del plan es el que se aplica primero, asi que queda ARRIBA,
       pegado al nodo del que cuelga la cadena. Es al reves que en el
       timeline de Hiero, donde el primero va al subtrack de mas abajo.
-    - CON QUE PARAMETROS: el <cdlWorkingSpace> dice en que espacio opera
-      el CDL (ej. ACEScct, NO el scene_linear que trae el nodo por
-      defecto), y el <file> del LMT nombra el .clf a cargar.
+    - CON QUE PARAMETROS: la cadena corre en ACES2065-1, y el
+      <cdlWorkingSpace> es la excepcion que saca al CDL a ACEScct.
+      Ninguno de los dos es el scene_linear que trae el nodo por
+      defecto. El <file> del LMT nombra el .clf a cargar, que entra
+      y sale en ACES2065-1.
 
   Nodos que sabe crear:
     OCIOCDLTransform  <- el .cdl del plate (grade)
@@ -48,6 +50,15 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.12: El .clf del LMT pasa a procesarse en ACES2065-1. El nodo quedaba
+         con su default `scene_linear`, que no es un espacio sino un ROL
+         del config OCIO, y en los configs ACES apunta a ACEScg (AP1); el
+         .clf entra y sale en AP0, asi que recibia el gamut equivocado. La
+         cadena de un .amf corre en ACES2065-1 y el <cdlWorkingSpace> del
+         CDL es la EXCEPCION, no la regla. Ademas el matcheo contra el enum
+         del knob deja afuera los ROLES, y si el config no expone el espacio
+         pedido eso sube a un cartel en vez de quedar en un WARN del log.
+         Mismo criterio que Apply AMF de HieroTools.
   v0.11: La cadena se INSERTA en el stream en vez de quedar suelta al
          costado. Antes se creaban los nodos desconectados y ademas
          apilados hacia arriba, que en Nuke es al reves del sentido del
@@ -78,6 +89,23 @@ DEBUG = False
 # Nombres de carpeta donde viven los archivos de look, colgando del shot.
 INPUT_DIR_NAME = "_input"
 LOOK_DIR_NAME = "Look_Files"
+
+# El espacio en el que corre la cadena de un .amf.
+#
+# La pipeline ACES que describe un .amf opera en ACES2065-1, y por eso el CDL
+# necesita declarar su <cdlWorkingSpace>: salirse a ACEScct es la EXCEPCION,
+# no la regla. Un lookTransform que no declara nada corre en ACES2065-1.
+#
+# Sin esto, el nodo se queda con su default `scene_linear`, que es un ROL del
+# config OCIO y no un espacio: en los configs ACES apunta a ACEScg (AP1). Un
+# .clf de LMT entra y sale en AP0 -lo declara en su propio InputDescriptor y
+# arranca con una matriz AP0 a AP1-, asi que alimentarlo con AP1 le mete una
+# conversion de gamut de mas y corre la LUT sobre datos que no le corresponden.
+#
+# El knob no dice "la entrada esta en", dice "aplicalo en": el nodo convierte
+# de scene_linear a este espacio, aplica el archivo y vuelve. Por eso pedir
+# ACES2065-1 es correcto sea cual sea el working space del script.
+AMF_WORKING_SPACE = "ACES2065-1"
 
 # Plan de respaldo, para cuando el shot no trae .amf. Mismo orden que el .amf
 # de referencia: primero el grade, despues el LMT.
@@ -497,7 +525,7 @@ def build_effect_plan(look_dir, amf_path=None):
                     "type": "OCIOCDLTransform",
                     "file": cdl_path,
                     "cccid": read_cccid(cdl_path),
-                    "working_space": info["working_space"],
+                    "working_space": info["working_space"] or AMF_WORKING_SPACE,
                     "label": "CDL",
                 }
             )
@@ -521,13 +549,17 @@ def build_effect_plan(look_dir, amf_path=None):
                     )
                     continue
             lmt_path = _slash(lmt_path)
-            debug_print("    %d. [APLICAR] LMT -> %s" % (index, os.path.basename(lmt_path)))
+            espacio_lmt = info["working_space"] or AMF_WORKING_SPACE
+            debug_print(
+                "    %d. [APLICAR] LMT -> %s (working space: %s)"
+                % (index, os.path.basename(lmt_path), espacio_lmt)
+            )
             plan.append(
                 {
                     "type": "OCIOFileTransform",
                     "file": lmt_path,
                     "cccid": None,
-                    "working_space": info["working_space"],
+                    "working_space": espacio_lmt,
                     "label": "LMT",
                 }
             )
@@ -541,23 +573,27 @@ def build_effect_plan(look_dir, amf_path=None):
 
 
 def _fallback_plan(look_dir):
-    """Plan fijo por extension, para shots sin .amf."""
+    """Plan fijo por extension, para shots sin .amf.
+
+    Sin .amf el unico working space que se puede afirmar es el del .clf: un LMT
+    de ACES entra y sale en ACES2065-1 por convencion, y el archivo mismo lo
+    declara. El del .cdl queda sin tocar a proposito: un .cdl suelto puede estar
+    hecho para ACEScct, ACEScc o lineal, y no hay de donde saberlo. Adivinarlo
+    seria peor que dejar el default y que el log lo diga.
+    """
     plan = []
     for spec in FALLBACK_EFFECTS:
         file_path = find_look_file(look_dir, spec["extension"])
         if not file_path:
             continue
+        es_cdl = spec["type"] == "OCIOCDLTransform"
         plan.append(
             {
                 "type": spec["type"],
                 "file": file_path,
-                "cccid": (
-                    read_cccid(file_path)
-                    if spec["type"] == "OCIOCDLTransform"
-                    else None
-                ),
-                "working_space": None,
-                "label": "CDL" if spec["type"] == "OCIOCDLTransform" else "LMT",
+                "cccid": read_cccid(file_path) if es_cdl else None,
+                "working_space": None if es_cdl else AMF_WORKING_SPACE,
+                "label": "CDL" if es_cdl else "LMT",
             }
         )
     return plan
@@ -597,29 +633,47 @@ def match_colorspace_option(node, knob_name, wanted):
 
     target = _normalize(wanted)
 
-    # De mas estricto a mas laxo. El orden importa: buscando 'ACEScc' primero
-    # por igualdad y sufijo se evita que matchee 'ACEScct' por contencion.
-    for opcion in options:
-        if _normalize(opcion) == target:
-            return opcion
-    for opcion in options:
-        if _normalize(opcion).endswith(target):
-            return opcion
-    for opcion in options:
-        if target in _normalize(opcion):
-            return opcion
+    # Dos pasadas: primero contra los espacios nombrados DIRECTO, y recien
+    # despues contra la lista entera. Los ROLES del config aparecen en el enum
+    # con formato 'scene_linear (ACES - ACEScg)' y son una INDIRECCION: pidiendo
+    # ACES2065-1 matchean 'ACES - ACES2065-1' y 'default (ACES - ACES2065-1)', y
+    # cual gana depende del orden del enum. La segunda pasada no es un adorno:
+    # hay colorspaces directos con parentesis en su propio nombre -en aces_1.2
+    # hay 34, del tipo 'Input - ARRI - V3 LogC (EI160) - Wide Gamut'-, y
+    # descartarlos de una dejaria sin resolver a quien pida uno de esos. Con las
+    # dos pasadas, un rol solo puede ganar si NADA directo sirve.
+    directas = [o for o in options if "(" not in str(o)]
+
+    for candidatas in (directas, options):
+        # De mas estricto a mas laxo. El orden importa: buscando 'ACEScc'
+        # primero por igualdad y sufijo se evita que matchee 'ACEScct' por
+        # contencion.
+        for opcion in candidatas:
+            if _normalize(opcion) == target:
+                return opcion
+        for opcion in candidatas:
+            if _normalize(opcion).endswith(target):
+                return opcion
+        for opcion in candidatas:
+            if target in _normalize(opcion):
+                return opcion
 
     debug_print("    [WARN] '%s' no figura entre las opciones de %s" % (wanted, knob_name))
     return None
 
 
 def configure_node(node, spec):
-    """Carga el archivo de look y los parametros del .amf en el nodo."""
+    """Carga el archivo de look y los parametros del .amf en el nodo.
+
+    Devuelve (ok, motivo), donde `motivo` es el texto para el cartel del
+    usuario cuando algo quedo mal, o None si salio todo bien.
+    """
     if not node:
         debug_print("    [ERROR] No hay nodo que configurar.")
-        return False
+        return False, "the node could not be configured"
 
     ok = True
+    motivo = None
 
     if spec["type"] == "OCIOCDLTransform":
         # read_from_file va PRIMERO: con el knob en False, file y cccid quedan
@@ -633,23 +687,32 @@ def configure_node(node, spec):
     else:
         ok = _set_knob(node, "file", spec["file"]) and ok
 
-    # El working space lo declara el .amf. El default del nodo (scene_linear)
-    # no es el que pide la cadena ACES, y con un grade real da distinto.
+    # El working space sale del .amf, o de AMF_WORKING_SPACE si el .amf no lo
+    # declara. El default del nodo, `scene_linear`, es un rol que en los configs
+    # ACES cae en ACEScg: no es el espacio en el que corre la cadena.
     wanted = spec.get("working_space")
     if wanted:
         opcion = match_colorspace_option(node, "working_space", wanted)
         if opcion:
             ok = _set_knob(node, "working_space", opcion) and ok
         else:
+            # NO es cosmetico y no puede pasar en silencio: el nodo se queda en
+            # `scene_linear`, que en los configs ACES es ACEScg, y el archivo de
+            # look termina corriendo sobre el gamut equivocado. La cadena queda
+            # creada pero MAL, asi que el motivo sube al cartel. Un resultado
+            # incorrecto informado como exito es el peor final.
             debug_print(
-                "    [WARN] Se deja el working_space por defecto (el .amf pedia '%s')"
+                "    [ERROR] El OCIO config del script no expone '%s': el "
+                "working_space queda en el default del nodo y el look sale mal."
                 % wanted
             )
+            motivo = "the project OCIO config has no '%s' colorspace" % wanted
+            ok = False
 
-    return ok
+    return ok, motivo
 
 
-def create_chain(plan, label_suffix=None):
+def create_chain(plan, label_suffix=None, avisos=None):
     """Crea los nodos del plan, configurados, sin posicionar ni conectar.
 
     Los nodos se crean con nuke.nodes.<Clase>() y no con nuke.createNode():
@@ -660,6 +723,12 @@ def create_chain(plan, label_suffix=None):
     Devuelve la lista de nodos creados, en el orden del plan. El orden del
     plan es el de la cadena: el primero se aplica primero, o sea que va
     ARRIBA en el Node Graph.
+
+    `avisos` es una lista opcional donde se juntan los motivos por los que un
+    nodo quedo mal configurado, para mostrarlos DESPUES en un solo cartel. Un
+    motivo repetido no se agrega dos veces: las dos cadenas -la del comp y la
+    del Input Process- salen del MISMO plan, asi que fallarian por lo mismo y
+    verlo duplicado no aporta.
     """
     nodos = []
     for spec in plan:
@@ -673,7 +742,9 @@ def create_chain(plan, label_suffix=None):
             debug_print("    [ERROR] No se pudo crear el nodo: %s" % e)
             continue
 
-        configure_node(node, spec)
+        _ok, motivo = configure_node(node, spec)
+        if motivo and avisos is not None and motivo not in avisos:
+            avisos.append(motivo)
 
         etiqueta = spec.get("label") or ""
         if label_suffix:
@@ -1003,6 +1074,10 @@ def _main_interno():
     )
 
     # ---- Crear ----
+    # Los motivos por los que un nodo queda mal configurado se juntan aca y se
+    # muestran en UN cartel al final, ya cerrado el Undo: primero se termina el
+    # trabajo sobre el Node Graph, despues se le habla al usuario.
+    avisos = []
     nuke.Undo().begin("Apply AMF")
     try:
         # El ancla se resuelve ANTES de deseleccionar: es el nodo seleccionado.
@@ -1018,7 +1093,7 @@ def _main_interno():
 
         if crear_nodos:
             debug_print("\n[CADENA PARA EL COMP]")
-            cadena = create_chain(plan)
+            cadena = create_chain(plan, avisos=avisos)
             insert_chain(cadena, anchor, es_noop=bool(no_op))
             creados.extend(cadena)
 
@@ -1027,7 +1102,7 @@ def _main_interno():
             # Esta cadena va SUELTA a proposito: el Input Process no cuelga
             # del arbol del comp, lo lee el Viewer por su cuenta. Se planta a
             # la derecha del ancla para no encimarse con la otra.
-            cadena_ip = create_chain(plan, label_suffix="Input Process")
+            cadena_ip = create_chain(plan, label_suffix="Input Process", avisos=avisos)
             connect_chain(cadena_ip)
             x_ip = anchor.xpos() + DISTANCIA_X * 2
             y_ip = anchor.ypos() + anchor.screenHeight() + DISTANCIA_Y
@@ -1061,6 +1136,18 @@ def _main_interno():
         debug_print("\n[LISTO] nodos creados: %d" % len(creados))
     finally:
         nuke.Undo().end()
+
+    # La cadena quedo creada, pero si algun nodo no pudo tomar su working space
+    # el look sale MAL. Callarlo es el peor final: el usuario ve los nodos en el
+    # Node Graph y da por hecho que estan bien.
+    if avisos:
+        _aviso(
+            titulo,
+            "The color chain was created, but it is NOT correct:\n\n"
+            "    %s\n\n"
+            "The nodes kept their default working space, so the look is being "
+            "applied in the wrong color space." % "\n    ".join(avisos),
+        )
 
 
 def main():
