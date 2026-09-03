@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.12 | Lega
+  LGA_ApplyAMF v0.13 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -50,6 +50,12 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.13: Los textos visibles dicen "AMF" y no "Apply AMF", como la
+         entrada del menu. Incluye el nombre del undo, que es lo que se
+         lee en el Edit del host. El nombre del modulo y el key del menu
+         NO cambian: el key es el que mira Enable Tools contra el
+         Enabled.ini, y renombrarlo daria la tool por deshabilitada en
+         toda instalacion que ya la tenga configurada.
   v0.12: El .clf del LMT pasa a procesarse en ACES2065-1. El nodo quedaba
          con su default `scene_linear`, que no es un espacio sino un ROL
          del config OCIO, y en los configs ACES apunta a ACEScg (AP1); el
@@ -993,7 +999,7 @@ def _main_interno():
     debug_print("  LGA_ApplyAMF - cadena de color segun el .amf del shot")
     debug_print("=" * 70)
 
-    titulo = "Apply AMF"
+    titulo = "AMF"
 
     script_path = get_script_path()
     debug_print("  script               : %s" % script_path)
@@ -1001,7 +1007,7 @@ def _main_interno():
         _aviso(
             titulo,
             "The script has not been saved yet.\n\n"
-            "Apply AMF finds the shot from the .nk path, so the script has to "
+            "AMF finds the shot from the .nk path, so the script has to "
             "live inside the shot folder first.",
         )
         return
@@ -1013,7 +1019,7 @@ def _main_interno():
             titulo,
             "Could not resolve the shot folder from the script path:\n\n"
             "%s\n\n"
-            "Apply AMF walks up the path looking for a folder that contains "
+            "AMF walks up the path looking for a folder that contains "
             "'%s'." % (script_path, INPUT_DIR_NAME),
         )
         return
@@ -1078,7 +1084,7 @@ def _main_interno():
     # muestran en UN cartel al final, ya cerrado el Undo: primero se termina el
     # trabajo sobre el Node Graph, despues se le habla al usuario.
     avisos = []
-    nuke.Undo().begin("Apply AMF")
+    nuke.Undo().begin("AMF")
     try:
         # El ancla se resuelve ANTES de deseleccionar: es el nodo seleccionado.
         anchor, no_op = get_anchor_node()

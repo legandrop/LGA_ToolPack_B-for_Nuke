@@ -1,13 +1,14 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF_Dialogs v1.03 | Lega
+  LGA_ApplyAMF_Dialogs v1.04 | Lega
 
   Los dos carteles de LGA_ApplyAMF: elegir el plate y elegir que hacer
   con la cadena. Van en su propio modulo porque LGA_ApplyAMF.py es
   logica pura (sin Qt) y estos dos dialogos son la unica parte de la
   tool que necesita PySide.
 
+  v1.04: El cartel de acciones se llama "AMF", como la entrada del menu.
   v1.03: El cartel de eleccion habla de .amf y no de plates. Decia
          "This shot has more than one plate", y lo que dispara el cartel
          no es la cantidad de plates del shot -puede haber muchos y un
@@ -438,7 +439,7 @@ class _AskActionsDialog(QtWidgets.QDialog):
         self._height_fitted = False
         self._rows = []
 
-        self.setWindowTitle("Apply AMF")
+        self.setWindowTitle("AMF")
         self.setModal(True)
         self.setStyleSheet(Style.FORM)
         self.setMinimumWidth(Metric.DIALOG_MIN_WIDTH)
@@ -460,7 +461,7 @@ class _AskActionsDialog(QtWidgets.QDialog):
         )
         root.setSpacing(Metric.SPACING + 4)
 
-        title = QtWidgets.QLabel("Apply AMF", self)
+        title = QtWidgets.QLabel("AMF", self)
         title.setProperty("lgaTitle", True)
         root.addWidget(title)
 
