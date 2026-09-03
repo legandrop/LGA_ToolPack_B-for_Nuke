@@ -1,12 +1,17 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF_Dialogs v1.02 | Lega
+  LGA_ApplyAMF_Dialogs v1.03 | Lega
 
   Los dos carteles de LGA_ApplyAMF: elegir el plate y elegir que hacer
   con la cadena. Van en su propio modulo porque LGA_ApplyAMF.py es
   logica pura (sin Qt) y estos dos dialogos son la unica parte de la
   tool que necesita PySide.
+
+  v1.03: El cartel de eleccion habla de .amf y no de plates. Decia
+         "This shot has more than one plate", y lo que dispara el cartel
+         no es la cantidad de plates del shot -puede haber muchos y un
+         solo .amf- sino la cantidad de .amf que hay en Look_Files.
 
   pick_plate(parent, entries) -> entry|None
       Cartel 1. Filas numeradas, una por plate (scan_amf_entries). Elegir
@@ -251,7 +256,7 @@ class _PickPlateDialog(QtWidgets.QDialog):
         self._height_fitted = False
         self._rows = []
 
-        self.setWindowTitle("Select Plate")
+        self.setWindowTitle("Select AMF")
         self.setModal(True)
         self.setStyleSheet(Style.FORM)
         self.setMinimumWidth(Metric.DIALOG_MIN_WIDTH)
@@ -272,12 +277,12 @@ class _PickPlateDialog(QtWidgets.QDialog):
         )
         root.setSpacing(Metric.SPACING + 4)
 
-        title = QtWidgets.QLabel("Select plate", self)
+        title = QtWidgets.QLabel("Select AMF", self)
         title.setProperty("lgaTitle", True)
         root.addWidget(title)
 
         subtitle = QtWidgets.QLabel(
-            "This shot has more than one plate. Choose which one to apply.",
+            "This shot has more than one .amf. Choose which one to apply.",
             self,
         )
         subtitle.setWordWrap(True)
@@ -309,7 +314,7 @@ class _PickPlateDialog(QtWidgets.QDialog):
         shortcut_count = min(9, len(self._entries))
         hint = _make_hint_label(
             "Press <span style='color:%s'><b>1</b></span>-"
-            "<span style='color:%s'><b>%d</b></span> to choose a plate.<br/>"
+            "<span style='color:%s'><b>%d</b></span> to choose an .amf.<br/>"
             "Press <span style='color:%s'><b>Esc</b></span> to cancel."
             % (
                 Color.ACCENT_HOVER,
