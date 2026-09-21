@@ -2,6 +2,8 @@
 
 ## v1.09
 
+- **`LGA_UI_Style_ToolPackB v1.28`: el switch pill compartido queda sincronizado.** Incorpora las hojas de contenedor, segmento activo e inactivo que preservan la geometría y los estados de Studio/Client en los cuatro packs, sin que cada diálogo copie QSS propio. [ ToolPack B - Sincronizar switch pill ]
+
 - **`LGA_ApplyAMF v0.13`, `LGA_ApplyAMF_Dialogs v1.04`: los textos visibles dicen `AMF`, como la entrada del menu.** Quedaban conviviendo dos nombres: el menu ya decia AMF y los carteles seguian diciendo Apply AMF. Se unificaron el titulo del cartel de acciones, el titulo de los carteles de error y los dos textos que nombraban la tool adentro de un mensaje. Tambien el nombre del undo, que es lo que se lee en el menu Edit del host. El nombre del modulo y el key del menu NO cambian: el key es el que mira Enable Tools contra el Enabled.ini, y renombrarlo daria la tool por deshabilitada en toda instalacion que ya la tenga configurada. Verificado renderizando los dos carteles. [ ToolPack B - Los textos de la tool dicen AMF ]
 
 - **`LGA_ApplyAMF_Dialogs v1.03`: el cartel de eleccion habla de .amf y no de plates.** Decia "This shot has more than one plate", y eso no es lo que dispara el cartel: un shot puede tener muchos plates y un solo .amf, y entonces no se pregunta nada. Lo que lo dispara es que haya .amf para mas de un plate en Look_Files. Los cuatro textos pasan a nombrar el archivo: titulo de ventana, titulo, subtitulo y el hint de atajos. Las filas siguen mostrando el plate y su version, que es lo que distingue a un .amf de otro. Verificado renderizando el cartel con el harness. [ ToolPack B - El cartel de Apply AMF habla de .amf y no de plates ]
