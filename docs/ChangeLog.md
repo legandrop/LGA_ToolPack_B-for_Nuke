@@ -2,6 +2,8 @@
 
 ## v1.09
 
+- **`LGA_UI_Style_ToolPackB v1.29`: la cápsula PILL hundida queda sincronizada.** `PILL_CONTAINER_SUNKEN` usa `#161616` para separar un switch del fondo idéntico de su ventana sin modificar el toggle Studio/Client. [ ToolPack B - Sincronizar cápsula PILL hundida ]
+
 - **`LGA_UI_Style_ToolPackB v1.28`: el switch pill compartido queda sincronizado.** Incorpora las hojas de contenedor, segmento activo e inactivo que preservan la geometría y los estados de Studio/Client en los cuatro packs, sin que cada diálogo copie QSS propio. [ ToolPack B - Sincronizar switch pill ]
 
 - **`LGA_ApplyAMF v0.13`, `LGA_ApplyAMF_Dialogs v1.04`: los textos visibles dicen `AMF`, como la entrada del menu.** Quedaban conviviendo dos nombres: el menu ya decia AMF y los carteles seguian diciendo Apply AMF. Se unificaron el titulo del cartel de acciones, el titulo de los carteles de error y los dos textos que nombraban la tool adentro de un mensaje. Tambien el nombre del undo, que es lo que se lee en el menu Edit del host. El nombre del modulo y el key del menu NO cambian: el key es el que mira Enable Tools contra el Enabled.ini, y renombrarlo daria la tool por deshabilitada en toda instalacion que ya la tenga configurada. Verificado renderizando los dos carteles. [ ToolPack B - Los textos de la tool dicen AMF ]
