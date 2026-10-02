@@ -436,16 +436,3 @@ n2.addCommand(
     "Documentation v%s" % PRODUCT_VERSION,
     lambda: webbrowser.open("https://github.com/legandrop/LGA_ToolPack_B-for_Nuke"),
 )
-
-
-def _whats_new_runner():
-    # El modulo se importa recien al hacer click: las notas no se leen al
-    # arrancar Nuke, solo cuando el usuario las pide.
-    import LGA_ToolPackB_WhatsNew
-
-    LGA_ToolPackB_WhatsNew.show_whats_new()
-
-
-# Igual que Documentation, no pasa por is_enabled(): es informacion del pack,
-# no una tool que se pueda apagar.
-n2.addCommand("What's new", _whats_new_runner)

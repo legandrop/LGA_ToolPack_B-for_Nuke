@@ -11,7 +11,6 @@ platforms: [win, mac]
 ## Unreleased
 
 ## v1.09
-- [new] The TP2 menu has a new What's new entry that shows what changed in each version.
 - [new] AMF (NODE BUILDS) builds the shot's color chain from its .amf file, asks which .amf to use when the shot has more than one, and can also leave a copy as the Viewer's Input Process.
 - [fixed] Animation Maker opens again from its right-click menu, and the buttons it adds to a node's tab work again, instead of failing with a name error.
 - [improved] Animation Maker is updated to version 1.5, with Nuke 16 support.
