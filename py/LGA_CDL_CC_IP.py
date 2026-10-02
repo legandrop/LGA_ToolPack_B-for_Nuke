@@ -1,7 +1,7 @@
 """
 ___________________________________________________________________________________________________
 
-  LGA_CDL_CC_IP v1.01 | Lega
+  LGA_CDL_CC_IP v1.02 | Lega
 
   Herramienta para exportar los valores CDL desde un nodo Read o OCIOCDLTransform y convertirlos
   en un archivo .cc que se guarda en el mismo directorio que el archivo CDL original.
@@ -9,6 +9,10 @@ ________________________________________________________________________________
   Crea dos nodos OCIOFileTransform:
   uno para el renderizado de MOV y otro configurado como el Input Process activo.
 
+  v1.02: Sin nada seleccionado en el Node Graph ya no toma un nodo
+         seleccionado adentro de un grupo o gizmo, ni tira un ValueError.
+         Sin un OCIOCDLTransform o Read seleccionado avisa con un cartel en
+         vez de imprimir en la consola.
   v1.01: Los carteles de error salen del helper de carteles del pack
          (show_error) en vez de nuke.message, con fallback si falta.
   v1.00: Version anterior (v1.0), sin changelog interno.
@@ -17,6 +21,7 @@ ________________________________________________________________________________
 """
 
 import nuke
+from LGA_ToolPackB_Selection import selected_node as graph_selected_node
 import os
 
 # Carteles estilados del pack. Con fallback al cartel de Nuke: este script
@@ -38,8 +43,11 @@ def debug_print(*message):
 
 
 def main():
-    # Obtener el nodo seleccionado
-    selected_node = nuke.selectedNode()
+    # Obtener el nodo seleccionado (solo del grafo actual, no de adentro de un gizmo)
+    try:
+        selected_node = graph_selected_node()
+    except ValueError:
+        selected_node = None
 
     # Verificar si hay un nodo seleccionado y si es un OCIOCDLTransform o un Read
     if selected_node and selected_node.Class() in ["OCIOCDLTransform", "Read"]:
@@ -135,7 +143,7 @@ def main():
             print(f"Error: {str(e)}")
 
     else:
-        print("No se ha seleccionado un nodo OCIOCDLTransform o Read valido.")
+        show_error(None, "CDL -> CC Input Process", "Select an OCIOCDLTransform or a Read node.")
 
 
 import nuke

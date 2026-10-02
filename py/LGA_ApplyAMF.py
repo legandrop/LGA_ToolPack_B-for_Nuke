@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.13 | Lega
+  LGA_ApplyAMF v0.14 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -50,6 +50,9 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.14: Sin nada seleccionado en el Node Graph ya no cuelga la cadena de un
+         nodo seleccionado adentro de un grupo o gizmo, que nuke.selectedNode()
+         devolvia: crea el NoOp en el cursor (LGA_ToolPackB_Selection).
   v0.13: Los textos visibles dicen "AMF" y no "Apply AMF", como la
          entrada del menu. Incluye el nombre del undo, que es lo que se
          lee en el Edit del host. El nombre del modulo y el key del menu
@@ -85,6 +88,7 @@ import re
 import xml.etree.ElementTree as ET
 
 import nuke
+from LGA_ToolPackB_Selection import selected_node as graph_selected_node
 
 # ============================
 # Configuracion
@@ -853,7 +857,7 @@ def get_anchor_node():
     de donde colgar, y el llamador lo borra al terminar.
     """
     try:
-        node = nuke.selectedNode()
+        node = graph_selected_node()
         debug_print("  ancla                : %s (%s)" % (node.name(), node.Class()))
         return node, None
     except ValueError:

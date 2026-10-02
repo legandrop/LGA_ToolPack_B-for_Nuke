@@ -11,6 +11,7 @@ platforms: [win, mac]
 ## Unreleased
 
 ## v1.09
+- [fixed] CDL -> CC Input Process no longer uses a node left selected inside a gizmo when nothing is selected in the Node Graph, and says so when no valid node is selected.
 - [new] AMF (NODE BUILDS) builds the shot's color chain from its .amf file, asks which .amf to use when the shot has more than one, and can also leave a copy as the Viewer's Input Process.
 - [fixed] Animation Maker opens again from its right-click menu, and the buttons it adds to a node's tab work again, instead of failing with a name error.
 - [improved] Animation Maker is updated to version 1.5, with Nuke 16 support.

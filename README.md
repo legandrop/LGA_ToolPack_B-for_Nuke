@@ -172,7 +172,7 @@ This section groups tools to build setups, edit knobs or speed up repetitive tas
 
 
 
-## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.13 | Lega
+## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.14 | Lega
 
 Builds the color chain declared by the shot's **.amf** file, which lives next to the plate in `_input/Look_Files`.<br>
 Creates only the transforms the .amf marks as not applied, and inserts them below the selected node. Each node gets the working space that part of the chain runs in: ACES2065-1 by default, or whatever the .amf declares -ACEScct for the CDL-. If the shot has several plates, it asks which one to apply, and it can optionally leave a separate copy assigned as the Viewer's Input Process.
@@ -233,7 +233,7 @@ It also assigns the original node as the **Input Process** of the available view
 
 
 
-## <img src="Doc_Media/image13.png" alt="" width="6" height="16" style="margin-right:3px;"> CDL -> CC Input Process v1.0 | Lega
+## <img src="Doc_Media/image13.png" alt="" width="6" height="16" style="margin-right:3px;"> CDL -> CC Input Process v1.02 | Lega
 
 Reads a CDL file from a **Read** or **OCIOCDLTransform** node, generates a **.cc** file and creates **OCIOFileTransform** nodes to use it both for rendering and in the viewer's Input Process.<br>
 Turns CDL grades into a practical viewing and output setup inside the script.
