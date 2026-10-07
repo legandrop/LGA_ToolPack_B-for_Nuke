@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.10
+
+- **TimeClip -> Write copia el rango de salida.** Ctrl+T usa firstFrame/lastFrame de Nuke para incluir start at y offset, en vez del rango de entrada; 1–68 con start at 1009 produce 1009–1076. La copia queda en un solo undo. Script v1.02. [ TimeClipToWrite - Copiar el rango de salida con desplazamiento ]
+
 ## v1.09
 
 - **AMF y CDL -> CC Input Process tomaban un nodo de adentro de un gizmo.** `nuke.selectedNode()` devuelve también un nodo que quedó seleccionado adentro de un grupo o gizmo, aunque el Node Graph no tenga selección: AMF colgaba la cadena de ese nodo interno en vez de crear el NoOp en el cursor, y CDL -> CC Input Process lo leía o tiraba un ValueError. El módulo nuevo `LGA_ToolPackB_Selection` (copia del de ToolPack) solo acepta un nodo que esté en `selectedNodes()`. CDL -> CC Input Process avisa con un cartel cuando no hay un nodo válido. [ ToolPackB - Ignorar la seleccion de adentro de un gizmo ]

@@ -1,9 +1,11 @@
 """
 _____________________________________________________________________________________________
 
-  LGA_fr_TimeClip_to_Write v1.01 | Lega
-  Sets the frame range of the write noded to match the frame range of the selected TimeClip
+  LGA_fr_TimeClip_to_Write v1.02 | Lega
+  Sets the frame range of the Write node to match the frame range of the selected TimeClip
 
+  v1.02: Copia el rango de salida calculado por Nuke, incluyendo start at
+         y offset del TimeClip, en una sola operacion de undo.
   v1.01: Los carteles salen del helper de carteles del pack
          (show_warning) en vez de nuke.message, con fallback.
   v1.00: Version anterior (v1.0), sin changelog interno.
@@ -48,10 +50,21 @@ def set_write_from_timeclip():
         show_warning(None, "TimeClip -> Write", "You must select exactly one Write node and one TimeClip node.")
         return
 
-    # Copiar el rango de frames del TimeClip al Write
-    write_node["use_limit"].setValue(True)
-    write_node["first"].setValue(timeclip_node["first"].value())
-    write_node["last"].setValue(timeclip_node["last"].value())
+    # Nuke resuelve el rango de salida, incluyendo el desplazamiento temporal.
+    first = int(timeclip_node.firstFrame())
+    last = int(timeclip_node.lastFrame())
+    if first > last:
+        show_warning(None, "TimeClip -> Write", "The TimeClip output frame range is invalid.")
+        return
+
+    undo = nuke.Undo()
+    undo.begin("TimeClip -> Write")
+    try:
+        write_node["first"].setValue(first)
+        write_node["last"].setValue(last)
+        write_node["use_limit"].setValue(True)
+    finally:
+        undo.end()
 
 
 # set_write_from_timeclip()

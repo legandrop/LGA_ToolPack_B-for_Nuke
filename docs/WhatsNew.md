@@ -10,6 +10,9 @@ platforms: [win, mac]
 
 ## Unreleased
 
+## v1.10
+- [fixed] TimeClip -> Write now copies the output frame range, including start at or offset, so the Write renders the correct frames when the clip has been shifted.
+
 ## v1.09
 - [fixed] CDL -> CC Input Process no longer uses a node left selected inside a gizmo when nothing is selected in the Node Graph, and says so when no valid node is selected.
 - [new] AMF (NODE BUILDS) builds the shot's color chain from its .amf file, asks which .amf to use when the shot has more than one, and can also leave a copy as the Viewer's Input Process.

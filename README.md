@@ -123,9 +123,9 @@ Keeps the Writes limited to the correct range without editing each node by hand.
 
 
 
-## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> TimeClip -> Write v1.0 | Lega
+## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> TimeClip -> Write v1.02 | Lega
 
-Copies the frame range of a TimeClip node to the selected Write node.<br>
+Copies the output frame range of a TimeClip node to the selected Write node, including start at and offset.<br>
 The tool requires exactly one selected Write and one TimeClip.
 <br><br>
 <img src="Doc_Media/timeclip_to_write_shortcut.svg" alt="TimeClip to Write shortcut" width="165" height="43">

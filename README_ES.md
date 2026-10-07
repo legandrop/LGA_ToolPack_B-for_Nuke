@@ -123,9 +123,9 @@ Sirve para dejar los Writes limitados al rango correcto sin editar cada nodo man
 
 
 
-## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> TimeClip -> Write v1.0 | Lega
+## <img src="Doc_Media/image8.png" alt="" width="6" height="16" style="margin-right:3px;"> TimeClip -> Write v1.02 | Lega
 
-Copia el rango de frames de un nodo TimeClip al nodo Write seleccionado.<br>
+Copia el rango de salida de un nodo TimeClip al Write seleccionado, incluyendo start at y offset.<br>
 La herramienta requiere seleccionar exactamente un Write y un TimeClip.
 <br><br>
 <img src="Doc_Media/timeclip_to_write_shortcut.svg" alt="TimeClip to Write shortcut" width="165" height="43">
