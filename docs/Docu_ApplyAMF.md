@@ -19,9 +19,10 @@ La tool NO es un toggle: cada corrida crea nodos nuevos debajo del nodo seleccio
 ## Prioridad entre formatos
 
 1. **El `.amf` manda.** Si hay uno, el plan sale de el: orden, `applied`, working space y archivos. El `.cdl` es el hermano del `.amf` elegido.
-2. Sin `.amf`, plan fijo por extension: un `.cdl` y un `.clf` (el primero si hay varios, con aviso en el log).
-3. **El `.cube` solo entra cuando `Look_Files` no tiene NINGUN `.amf`, `.cdl` ni `.clf`.** Es el look de los shows que no usan esos formatos, no un agregado a ellos: apilar un `.cube` sobre la cadena de un `.amf` aplicaria el look dos veces. Consecuencia buscada: con un `.amf` cuyo plan queda vacio (todo ya aplicado en el plate) NO se cae al `.cube`; sale el cartel de "Nothing to apply".
-4. Un `.cube` que un `.amf` nombra en su `<file>` entra por el camino del `.amf` (con ACES2065-1, el espacio de la cadena del `.amf`), no por este.
+2. Sin `.amf`, plan fijo por extension: el `.cdl` suelto (si hay) y despues UN LMT. El LMT es el `.clf` si existe y, si no, el `.cube`. El orden en el arbol es el de siempre: CDL arriba, LMT abajo, cada uno colgado del anterior (el primero, del nodo seleccionado). Con varios `.cdl` o `.clf` se usa el primero, con aviso en el log.
+3. **Nunca un `.clf` y un `.cube` juntos.** Los dos son el LMT del shot: aplicar los dos dobla el look. Si hay `.cdl` + `.clf` + `.cube`, salen el CDL y el CLF y el `.cube` se ignora (queda anotado en el log). Un `.cdl` suelto y un `.cube`, en cambio, se aplican LOS DOS: son capas distintas (grade y look), no el mismo eslabon.
+4. **Con un `.amf` el `.cube` no entra**, aunque haya uno en la carpeta: apilarlo sobre la cadena del `.amf` aplicaria el look dos veces. Con un `.amf` cuyo plan queda vacio (todo ya aplicado en el plate) NO se cae al `.cube`; sale el cartel de "Nothing to apply". Un `.amf` que no se pudo parsear sigue cayendo al plan fijo de antes (`.cdl` + `.clf`, sin `.cube`).
+5. Un `.cube` que un `.amf` nombra en su `<file>` entra por el camino del `.amf` (con ACES2065-1, el espacio de la cadena del `.amf`), no por este.
 
 ## Varios `.cube`
 
@@ -58,9 +59,10 @@ El `OCIOFileTransform` queda con `interpolation=linear` (el default del nodo), i
 
 - `C:\Users\leg4-pc\.nuke\LGA_ToolPack-B\py\LGA_ApplyAMF.py`
   - `_main_interno`: flujo completo; la rama del `.cube` va despues de `build_effect_plan`.
-  - `has_primary_look_files`: condicion de "no hay `.amf`, `.cdl` ni `.clf`".
+  - `has_look_file`: decide si hay `.clf` (entonces el `.cube` no entra) o si hay que elegir un `.cube`.
+  - `_fallback_plan`, `cube_spec`: el plan fijo sin `.amf` (`.cdl` + LMT) y el eslabon del `.cube`.
   - `scan_look_entries` / `scan_amf_entries`: agrupado por plate y version.
-  - `pick_cube`, `build_cube_plan`, `cube_working_space`: eleccion del `.cube` y su working space (`_CUBE_SPACE_HINTS`, `CUBE_DEFAULT_SPACE`).
+  - `pick_cube`, `cube_spec`, `cube_working_space`: eleccion del `.cube` y su working space (`_CUBE_SPACE_HINTS`, `CUBE_DEFAULT_SPACE`).
   - `match_colorspace_option`, `configure_node`: resolucion del nombre corto contra el config OCIO, chequeo de `hasError` y cartel de "NOT correct".
   - `parse_lut_name`: clave de agrupado de los `.cube`.
   - `insert_chain`: ubicacion en el arbol (debajo del nodo seleccionado, reconecta lo que venia abajo).

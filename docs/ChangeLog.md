@@ -2,6 +2,8 @@
 
 ## v1.10
 
+- **AMF aplica el `.cdl` suelto y el `.cube` juntos.** El `.cube` solo entraba si `Look_Files` no tenía `.cdl`, `.clf` ni `.amf`, así que un shot con grade (`.cdl`) y LUT (`.cube`) aplicaba solo el grade. Ahora, sin `.amf`, el plan fijo es el `.cdl` (si hay) y un solo LMT: el `.clf` y, si no existe, el `.cube`; nunca los dos, porque doblaría el look. Con `.amf` no cambia nada. `LGA_ApplyAMF v0.16`. [ AMF - Aplica el cdl y el cube juntos ]
+
 - **AMF acepta un `.cube` como look del shot y funciona con los configs OCIO v2.** En shows donde el look es un LMT `.cube`, la tool decía "Nothing to apply": solo conocía `.amf`, `.cdl` y `.clf`. Ahora, si `Look_Files` no trae ninguno de esos, usa el `.cube` en un `OCIOFileTransform`; su working space sale del nombre y, sin pista, es ACEScct. Además, con los configs OCIO v2 que trae Nuke 17 el nodo quedaba con error y sin aviso, en todos los looks: se escribía la opción del enum con su ruta y alias en vez del nombre corto del colorspace. Un nodo que no carga su archivo ahora avisa. `LGA_ApplyAMF v0.15`, `LGA_ApplyAMF_Dialogs v1.05`; doc nueva `docs/Docu_ApplyAMF.md`. [ AMF - Look .cube y configs OCIO v2 ]
 
 - **TimeClip -> Write copia el rango de salida.** Ctrl+T usa firstFrame/lastFrame de Nuke para incluir start at y offset, en vez del rango de entrada; 1–68 con start at 1009 produce 1009–1076. La copia queda en un solo undo. Script v1.02. [ TimeClipToWrite - Copiar el rango de salida con desplazamiento ]

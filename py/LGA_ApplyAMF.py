@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.15 | Lega
+  LGA_ApplyAMF v0.16 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -33,9 +33,11 @@ ____________________________________________________________________
   Si el shot no trae .amf se cae a un plan fijo por extension: un .cdl y
   un .clf, sin tocar el working space.
 
-  Un .cube (LUT 1D/3D) es el LMT de los shows que no usan .amf ni .clf. Solo
-  se usa cuando Look_Files no tiene NINGUN .amf, .cdl ni .clf: si hay alguno
-  de esos manda, como siempre. Un .cube no trae metadata, asi que su working
+  Un .cube (LUT 1D/3D) es el LMT de los shows que no usan .amf ni .clf. Sin
+  .amf, el plan fijo es: el .cdl suelto (si hay) y despues UN LMT, que es el
+  .clf si existe y, si no, el .cube. Nunca un .clf y un .cube juntos: los dos
+  son LMT y aplicarlos a la vez dobla el look. Con un .amf manda el .amf y el
+  .cube no entra. Un .cube no trae metadata, asi que su working
   space sale del NOMBRE del archivo (ACEScct, ACEScc, ACEScg, AP1, ACES2065,
   AP0 o Linear) y, si no dice nada, es ACEScct, la convencion de los LMT en
   ACES. Con varios .cube se aplica el mismo criterio que con los .amf: se
@@ -60,6 +62,11 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.16: Con un .cdl suelto y un .cube se aplican LOS DOS (CDL arriba, LMT
+         abajo). Antes el .cube solo entraba si Look_Files no tenia ningun
+         .cdl, .clf ni .amf. Ahora el plan fijo sin .amf es .cdl + LMT, donde
+         el LMT es el .clf y, si no hay, el .cube; nunca los dos. Con .amf no
+         cambia nada.
   v0.15: Acepta un .cube en Look_Files como look del shot (LMT en un
          OCIOFileTransform), cuando el shot no trae .amf, .cdl ni .clf. El
          working space sale del nombre del archivo o, sin pista, es ACEScct.
@@ -573,16 +580,17 @@ def read_amf(amf_path):
     ]
 
 
-def build_effect_plan(look_dir, amf_path=None):
+def build_effect_plan(look_dir, amf_path=None, cube_path=None):
     """Arma la lista de nodos a crear, en orden.
 
     Con .amf: se respeta el orden y el applied de cada lookTransform, y se
     toman working space y nombre de archivo de ahi. El .cdl se resuelve como
-    hermano del .amf elegido. Sin .amf: plan fijo por extension.
+    hermano del .amf elegido. Sin .amf: plan fijo por extension (.cdl + LMT,
+    donde el LMT es el .clf o, si no hay, el `cube_path`).
     """
     if not amf_path:
         debug_print("  [AVISO] El shot no trae .amf: se usa el plan fijo por extension.")
-        return _fallback_plan(look_dir)
+        return _fallback_plan(look_dir, cube_path)
 
     debug_print("  amf                  : %s" % amf_path)
     look_transforms = read_amf(amf_path)
@@ -665,8 +673,13 @@ def build_effect_plan(look_dir, amf_path=None):
     return plan
 
 
-def _fallback_plan(look_dir):
+def _fallback_plan(look_dir, cube_path=None):
     """Plan fijo por extension, para shots sin .amf.
+
+    El plan es el .cdl suelto (si hay) y despues UN LMT: el .clf si existe y,
+    si no, el `cube_path` que le pasa el llamador (el .cube ya elegido). Nunca
+    los dos: un .clf y un .cube son ambos el LMT del shot y aplicar los dos
+    dobla el look.
 
     Sin .amf el unico working space que se puede afirmar es el del .clf: un LMT
     de ACES entra y sale en ACES2065-1 por convencion, y el archivo mismo lo
@@ -689,6 +702,15 @@ def _fallback_plan(look_dir):
                 "label": "CDL" if es_cdl else "LMT",
             }
         )
+
+    hay_lmt = any(spec["type"] == "OCIOFileTransform" for spec in plan)
+    if cube_path and not hay_lmt:
+        plan.append(cube_spec(cube_path))
+    elif cube_path:
+        debug_print(
+            "  [INFO] Hay .clf y .cube: los dos son LMT, se usa el .clf y el .cube "
+            "se ignora."
+        )
     return plan
 
 
@@ -697,19 +719,13 @@ def _fallback_plan(look_dir):
 # ============================
 
 
-def has_primary_look_files(look_dir):
-    """True si la carpeta trae algun .amf, .cdl o .clf.
-
-    Es la condicion para que un .cube NO entre en juego: el .cube es el look
-    de los shows que no usan ninguno de los otros tres, no un agregado a ellos.
-    """
+def has_look_file(look_dir, extension):
+    """True si la carpeta trae al menos un archivo de esa extension."""
     if not look_dir:
         return False
     try:
         for entry in os.scandir(look_dir):
-            if entry.is_file() and entry.name.lower().endswith(
-                (".amf", ".cdl", ".clf")
-            ):
+            if entry.is_file() and entry.name.lower().endswith(extension):
                 return True
     except OSError as e:
         debug_print("  [WARN] No se pudo listar '%s': %s" % (look_dir, e))
@@ -774,22 +790,20 @@ def pick_cube(look_dir):
     return elegido["path"], False
 
 
-def build_cube_plan(cube_path):
-    """Plan de un solo eslabon: el .cube como LMT en un OCIOFileTransform."""
+def cube_spec(cube_path):
+    """El .cube como eslabon LMT: un OCIOFileTransform con su working space."""
     espacio, origen = cube_working_space(cube_path)
     debug_print(
         "    [APLICAR] LUT -> %s (working space: %s, segun %s)"
         % (os.path.basename(cube_path), espacio, origen)
     )
-    return [
-        {
-            "type": "OCIOFileTransform",
-            "file": _slash(cube_path),
-            "cccid": None,
-            "working_space": espacio,
-            "label": "LMT",
-        }
-    ]
+    return {
+        "type": "OCIOFileTransform",
+        "file": _slash(cube_path),
+        "cccid": None,
+        "working_space": espacio,
+        "label": "LMT",
+    }
 
 
 # ============================
@@ -1284,18 +1298,23 @@ def _main_interno():
         amf_path = elegido["path"]
         debug_print("  [INFO] Plate elegido: %s" % elegido["name"])
 
-    debug_print("  [PLAN SEGUN EL AMF]")
-    plan = build_effect_plan(look_dir, amf_path)
-
-    # Un .cube solo entra cuando el shot no trae .amf, .cdl ni .clf: ver el
-    # header. Con un .amf cuyo plan quedo vacio (todo ya aplicado) NO se cae al
+    # El .cube es el LMT cuando no hay .amf (manda el .amf) ni .clf (el .clf y el
+    # .cube son los dos LMT: se aplica uno solo, y el .clf gana). Se elige ACA y
+    # no adentro del plan porque con varios .cube puede abrir el cartel de
+    # eleccion. Con un .amf cuyo plan queda vacio (todo ya aplicado) NO se cae al
     # .cube: el .amf manda y dice que no hay nada que hacer.
-    if not plan and not has_primary_look_files(look_dir):
-        cube_path, cancelado = pick_cube(look_dir)
-        if cancelado:
-            return
-        if cube_path:
-            plan = build_cube_plan(cube_path)
+    cube_path = None
+    if not entradas:
+        if has_look_file(look_dir, ".clf"):
+            if has_look_file(look_dir, CUBE_EXTENSION):
+                debug_print("  [INFO] Hay .clf y .cube: se usa el .clf como LMT.")
+        else:
+            cube_path, cancelado = pick_cube(look_dir)
+            if cancelado:
+                return
+
+    debug_print("  [PLAN SEGUN EL AMF]")
+    plan = build_effect_plan(look_dir, amf_path, cube_path)
 
     if not plan:
         _aviso(

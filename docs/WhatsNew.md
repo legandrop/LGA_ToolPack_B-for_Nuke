@@ -11,7 +11,7 @@ platforms: [win, mac]
 ## Unreleased
 
 ## v1.10
-- [improved] AMF now applies a .cube LUT from the shot's Look_Files folder as the shot's look when there is no .amf, .cdl or .clf.
+- [improved] AMF now applies a .cube LUT from the shot's Look_Files folder: without an .amf it applies the shot's loose .cdl (if any) and then the .cube, or the .clf when there is one.
 - [fixed] AMF applies its look correctly with the OCIO v2 configs that ship with Nuke 17, and warns when a look file can't be loaded.
 - [fixed] TimeClip -> Write now copies the output frame range, including start at or offset, so the Write renders the correct frames when the clip has been shifted.
 
