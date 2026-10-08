@@ -361,7 +361,7 @@ def parse_plate_name(basename):
     return match.group("plate"), int(match.group("version"))
 
 
-_LUT_VERSION_RE = re.compile(r"^(?P<base>.+)_v(?P<version>\d+)$")
+_LUT_VERSION_RE = re.compile(r"^(?P<base>.+)_v(?P<version>\d+)$", re.IGNORECASE)
 
 
 def parse_lut_name(basename):
