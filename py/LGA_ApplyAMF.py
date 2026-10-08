@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.14 | Lega
+  LGA_ApplyAMF v0.15 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -28,9 +28,19 @@ ____________________________________________________________________
   Nodos que sabe crear:
     OCIOCDLTransform  <- el .cdl del plate (grade)
     OCIOFileTransform <- el .clf que nombra el .amf (LMT)
+    OCIOFileTransform <- el .cube del shot, cuando no hay nada de lo anterior
 
   Si el shot no trae .amf se cae a un plan fijo por extension: un .cdl y
   un .clf, sin tocar el working space.
+
+  Un .cube (LUT 1D/3D) es el LMT de los shows que no usan .amf ni .clf. Solo
+  se usa cuando Look_Files no tiene NINGUN .amf, .cdl ni .clf: si hay alguno
+  de esos manda, como siempre. Un .cube no trae metadata, asi que su working
+  space sale del NOMBRE del archivo (ACEScct, ACEScc, ACEScg, AP1, ACES2065,
+  AP0 o Linear) y, si no dice nada, es ACEScct, la convencion de los LMT en
+  ACES. Con varios .cube se aplica el mismo criterio que con los .amf: se
+  agrupan por plate y version, y si quedan varios un cartel pregunta. Detalle
+  y motivos en docs/Docu_ApplyAMF.md.
 
   Flujo:
     1. Ruta del .nk abierto -> carpeta del shot (la que tiene _input).
@@ -50,6 +60,19 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.15: Acepta un .cube en Look_Files como look del shot (LMT en un
+         OCIOFileTransform), cuando el shot no trae .amf, .cdl ni .clf. El
+         working space sale del nombre del archivo o, sin pista, es ACEScct.
+         El cartel de "Nothing to apply" nombra tambien .cube.
+         Dos .cube se agrupan por el nombre ENTERO sin el _vNNN final (no por
+         el token anterior, que no es un plate): Preview_LMT_v001 y
+         Final_LMT_v001 son LUT distintos. match_colorspace_option devuelve
+         el nombre corto del colorspace (lo anterior al TAB del enum) y no la
+         cadena entera: con la entera, en los configs OCIO v2 de Foundry el
+         nodo quedaba con error y el look sin aplicar (tambien .clf y .cdl);
+         los alias de aces_1.2 quedan al final. Un nodo que queda con error
+         (archivo vacio, corrupto o inexistente) sube al cartel de "NOT
+         correct" en vez de pasar en silencio.
   v0.14: Sin nada seleccionado en el Node Graph ya no cuelga la cadena de un
          nodo seleccionado adentro de un grupo o gizmo, que nuke.selectedNode()
          devolvia: crea el NoOp en el cursor (LGA_ToolPackB_Selection).
@@ -122,6 +145,35 @@ AMF_WORKING_SPACE = "ACES2065-1"
 FALLBACK_EFFECTS = (
     {"type": "OCIOCDLTransform", "extension": ".cdl"},
     {"type": "OCIOFileTransform", "extension": ".clf"},
+)
+
+# Un .cube es un LUT 1D/3D pelado: no trae metadata, ni siquiera dice en que
+# espacio de color espera su entrada. Se deduce del nombre del archivo y, sin
+# pista, se asume ACEScct, que es la convencion de los LMT de ACES (un LMT en
+# un OCIOFileTransform con working space ACEScct es la forma en que el estudio
+# arma el look del shot). El nombre que se pide es el LOGICO ('ACEScct'): el
+# nombre real del colorspace lo resuelve match_colorspace_option contra el
+# config OCIO activo, porque cambia de config en config ('ACEScct' a secas o
+# 'ACES - ACEScct').
+CUBE_EXTENSION = ".cube"
+CUBE_DEFAULT_SPACE = "ACEScct"
+
+# Pista del nombre -> espacio logico. 'linear' se lee como lineal ACES (AP0),
+# no como cualquier lineal: el .cube de un LMT de ACES que dice 'Linear' habla
+# de ACES2065-1. Los lookahead evitan que 'acescc' matchee adentro de
+# 'acescct' y que 'linear' matchee adentro de 'nonlinear'.
+_CUBE_SPACE_HINTS = {
+    "acescct": "ACEScct",
+    "acescc": "ACEScc",
+    "acescg": "ACEScg",
+    "ap1": "ACEScg",
+    "aces2065": "ACES2065-1",
+    "ap0": "ACES2065-1",
+    "linear": "ACES2065-1",
+}
+_CUBE_SPACE_RE = re.compile(
+    r"(?<![a-z0-9])(%s)(?![a-z])"
+    % "|".join(sorted(_CUBE_SPACE_HINTS, key=len, reverse=True))
 )
 
 # La corrida SIEMPRE deja su log, este o no prendido el debug por consola. Sin
@@ -302,14 +354,37 @@ def parse_plate_name(basename):
     return match.group("plate"), int(match.group("version"))
 
 
-def scan_amf_entries(look_dir):
-    """Los .amf de la carpeta, agrupados por plate y con la version mas alta.
+_LUT_VERSION_RE = re.compile(r"^(?P<base>.+)_v(?P<version>\d+)$")
+
+
+def parse_lut_name(basename):
+    """Devuelve (nombre sin version, version) de un .cube, o (None, None).
+
+    A diferencia de un .amf, el token que precede a '_vNNN' NO identifica un
+    plate: en 'PROJA_Preview_LMT_v001.cube' y 'PROJA_Final_LMT_v001.cube' los
+    dos terminan en 'LMT' y son LUT distintos. Por eso la clave de agrupado es el
+    nombre ENTERO sin el '_vNNN' final: las versiones de un mismo LUT colapsan
+    en una entrada y dos LUT distintos quedan separados para el cartel.
+    """
+    stem = os.path.splitext(basename)[0]
+    match = _LUT_VERSION_RE.match(stem)
+    if not match:
+        return None, None
+    return match.group("base"), int(match.group("version"))
+
+
+def scan_look_entries(look_dir, extension):
+    """Los archivos de esa extension, agrupados por plate y con la version mas alta.
 
     Un shot tipico trae un .amf por version de cada plate
     (aPlate_v001, cbPlate_v001..v004). Ofrecer las cinco versiones no ayuda:
     lo que se aplica es el plate, y de cada plate la ultima version. Los
-    .amf cuyo nombre no matchea el patron se ofrecen igual, cada uno como su
-    propia entrada, para no esconderlos.
+    archivos cuyo nombre no matchea el patron se ofrecen igual, cada uno como
+    su propia entrada, para no esconderlos.
+
+    Sirve para .amf y para .cube. En un .amf el token anterior a '_vNNN' es el
+    plate; en un .cube se agrupa por el nombre entero sin el '_vNNN' final (ver
+    parse_lut_name).
 
     Devuelve una lista de dicts {plate, version, path, name}, ordenada por
     nombre de plate.
@@ -321,7 +396,7 @@ def scan_amf_entries(look_dir):
         amf_files = [
             entry.path
             for entry in os.scandir(look_dir)
-            if entry.is_file() and entry.name.lower().endswith(".amf")
+            if entry.is_file() and entry.name.lower().endswith(extension)
         ]
     except OSError as e:
         debug_print("  [ERROR] No se pudo listar '%s': %s" % (look_dir, e))
@@ -331,7 +406,10 @@ def scan_amf_entries(look_dir):
     sueltos = []
     for path in sorted(amf_files):
         nombre = os.path.basename(path)
-        plate, version = parse_plate_name(nombre)
+        if extension == CUBE_EXTENSION:
+            plate, version = parse_lut_name(nombre)
+        else:
+            plate, version = parse_plate_name(nombre)
         if plate is None:
             sueltos.append(
                 {
@@ -355,6 +433,11 @@ def scan_amf_entries(look_dir):
     entradas = sorted(por_plate.values(), key=lambda e: e["plate"].lower())
     entradas.extend(sueltos)
     return entradas
+
+
+def scan_amf_entries(look_dir):
+    """Los .amf de la carpeta (ver scan_look_entries)."""
+    return scan_look_entries(look_dir, ".amf")
 
 
 def sibling_look_file(amf_path, extension):
@@ -610,6 +693,106 @@ def _fallback_plan(look_dir):
 
 
 # ============================
+# .cube como look del shot
+# ============================
+
+
+def has_primary_look_files(look_dir):
+    """True si la carpeta trae algun .amf, .cdl o .clf.
+
+    Es la condicion para que un .cube NO entre en juego: el .cube es el look
+    de los shows que no usan ninguno de los otros tres, no un agregado a ellos.
+    """
+    if not look_dir:
+        return False
+    try:
+        for entry in os.scandir(look_dir):
+            if entry.is_file() and entry.name.lower().endswith(
+                (".amf", ".cdl", ".clf")
+            ):
+                return True
+    except OSError as e:
+        debug_print("  [WARN] No se pudo listar '%s': %s" % (look_dir, e))
+    return False
+
+
+def cube_working_space(cube_path):
+    """Espacio de color en el que corre el .cube. Devuelve (espacio, origen).
+
+    Un .cube no declara su espacio de entrada, asi que se lee del nombre
+    (ACEScct, ACEScc, ACEScg, AP1, ACES2065, AP0, Linear; sin distinguir
+    mayusculas ni exigir un separador concreto) y, sin pista, se asume
+    CUBE_DEFAULT_SPACE. Si el nombre trae mas de un espacio ('ACEScg_to_ACEScct')
+    gana el PRIMERO, que por convencion es el de entrada, y queda avisado en el
+    log. El espacio devuelto es el nombre logico: configure_node lo resuelve
+    contra el config OCIO real.
+
+    `origen` es 'nombre' o 'default', para el log.
+    """
+    stem = os.path.splitext(os.path.basename(cube_path))[0].lower()
+    hallados = [m.group(1) for m in _CUBE_SPACE_RE.finditer(stem)]
+    if not hallados:
+        return CUBE_DEFAULT_SPACE, "default"
+
+    espacios = []
+    for pista in hallados:
+        espacio = _CUBE_SPACE_HINTS[pista]
+        if espacio not in espacios:
+            espacios.append(espacio)
+    if len(espacios) > 1:
+        debug_print(
+            "  [AVISO] El nombre del .cube menciona varios espacios (%s): "
+            "se usa el primero." % ", ".join(espacios)
+        )
+    return espacios[0], "nombre"
+
+
+def pick_cube(look_dir):
+    """Elige el .cube a usar. Devuelve (ruta, cancelado).
+
+    Con uno solo no se pregunta. Con varios se agrupan por plate y version
+    (scan_look_entries) y, si queda mas de uno, se reutiliza el cartel de
+    eleccion de los .amf. Sin ningun .cube devuelve (None, False).
+    """
+    entradas = scan_look_entries(look_dir, CUBE_EXTENSION)
+    debug_print("  .cube encontrados    : %d" % len(entradas))
+    for entrada in entradas:
+        debug_print("      %s (v%s)" % (entrada["plate"], entrada["version"]))
+    if not entradas:
+        return None, False
+    if len(entradas) == 1:
+        debug_print("  [INFO] Un solo .cube, se usa sin preguntar.")
+        return entradas[0]["path"], False
+
+    from LGA_ApplyAMF_Dialogs import pick_plate
+
+    elegido = pick_plate(None, entradas, extension=CUBE_EXTENSION)
+    if elegido is None:
+        debug_print("  [INFO] El usuario cancelo la eleccion del .cube.")
+        return None, True
+    debug_print("  [INFO] .cube elegido: %s" % elegido["name"])
+    return elegido["path"], False
+
+
+def build_cube_plan(cube_path):
+    """Plan de un solo eslabon: el .cube como LMT en un OCIOFileTransform."""
+    espacio, origen = cube_working_space(cube_path)
+    debug_print(
+        "    [APLICAR] LUT -> %s (working space: %s, segun %s)"
+        % (os.path.basename(cube_path), espacio, origen)
+    )
+    return [
+        {
+            "type": "OCIOFileTransform",
+            "file": _slash(cube_path),
+            "cccid": None,
+            "working_space": espacio,
+            "label": "LMT",
+        }
+    ]
+
+
+# ============================
 # Creacion de nodos
 # ============================
 
@@ -631,6 +814,14 @@ def match_colorspace_option(node, knob_name, wanted):
     El nombre exacto del espacio depende del OCIO config del proyecto: el
     mismo ACEScct puede figurar como 'ACEScct' o 'ACES - ACEScct'. Por eso no
     se hardcodea el string, se busca contra las opciones reales del knob.
+
+    Cada opcion del enum de Nuke 17 trae el nombre del colorspace seguido de
+    campos separados por TAB: en aces_1.2 'ACES - ACEScct<TAB>Colorspaces/ACES/ACES -
+    ACEScct', y en los configs v2 de Foundry (fn-nuke_cg-config-v2.2.0_aces-v1.3,
+    studio v2.2.0, los v3.0.0 de ACES 2.0) 'ACEScct<TAB>Colorspaces/ACES/ACEScct<TAB><TAB>ACES -
+    ACEScct,acescct_ap1'. El knob ACEPTA la cadena entera, pero el nodo queda con
+    hasError=True y el LUT no se aplica (pixel 0.0), sin ningun aviso. Lo valido
+    es SOLO el primer campo, asi que se matchea contra el y se devuelve ese.
     """
     if not wanted:
         return None
@@ -643,30 +834,44 @@ def match_colorspace_option(node, knob_name, wanted):
 
     target = _normalize(wanted)
 
-    # Dos pasadas: primero contra los espacios nombrados DIRECTO, y recien
-    # despues contra la lista entera. Los ROLES del config aparecen en el enum
-    # con formato 'scene_linear (ACES - ACEScg)' y son una INDIRECCION: pidiendo
-    # ACES2065-1 matchean 'ACES - ACES2065-1' y 'default (ACES - ACES2065-1)', y
-    # cual gana depende del orden del enum. La segunda pasada no es un adorno:
-    # hay colorspaces directos con parentesis en su propio nombre -en aces_1.2
-    # hay 34, del tipo 'Input - ARRI - V3 LogC (EI160) - Wide Gamut'-, y
-    # descartarlos de una dejaria sin resolver a quien pida uno de esos. Con las
-    # dos pasadas, un rol solo puede ganar si NADA directo sirve.
-    directas = [o for o in options if "(" not in str(o)]
+    # Cada opcion es (cadena entera, nombre corto). El nombre corto es lo que va
+    # antes del primer TAB; sin TAB (otras versiones de Nuke) es la cadena entera
+    # y todo sigue como antes. Se matchea contra el nombre corto y no contra la
+    # cadena larga: esa trae la ruta y los alias del colorspace, y 'acescc'
+    # aparece adentro de los de 'ACEScct'. Se DEVUELVE el corto.
+    pares = [(str(o), str(o).split("\t")[0]) for o in options]
 
-    for candidatas in (directas, options):
+    # Los alias van al final. aces_1.2 trae una familia 'Utility/Aliases' con
+    # nombres en minuscula ('acescct', 'acescg'...) que son colorspaces validos
+    # pero no son el nombre del espacio: con el matcheo por nombre corto ganarian
+    # por igualdad exacta y el nodo quedaria con 'acescct' en vez de
+    # 'ACES - ACEScct'. Solo se usan si nada mas sirve.
+    sin_alias = [par for par in pares if "/aliases/" not in par[0].lower()]
+
+    # Tres pasadas: primero los espacios nombrados DIRECTO (sin alias), despues
+    # los demas sin alias, y recien al final todo. Los ROLES del config aparecen
+    # en versiones viejas del enum con formato 'scene_linear (ACES - ACEScg)' y son
+    # una INDIRECCION: pidiendo ACES2065-1 matchean 'ACES - ACES2065-1' y
+    # 'default (ACES - ACES2065-1)', y cual gana depende del orden del enum. La
+    # segunda pasada no es un adorno: hay colorspaces directos con parentesis en
+    # su propio nombre -en aces_1.2 hay 34, del tipo 'Input - ARRI - V3 LogC
+    # (EI160) - Wide Gamut'-, y descartarlos de una dejaria sin resolver a quien
+    # pida uno de esos. Un rol o un alias solo gana si NADA directo sirve.
+    directas = [par for par in sin_alias if "(" not in par[1]]
+
+    for candidatas in (directas, sin_alias, pares):
         # De mas estricto a mas laxo. El orden importa: buscando 'ACEScc'
         # primero por igualdad y sufijo se evita que matchee 'ACEScct' por
         # contencion.
-        for opcion in candidatas:
-            if _normalize(opcion) == target:
-                return opcion
-        for opcion in candidatas:
-            if _normalize(opcion).endswith(target):
-                return opcion
-        for opcion in candidatas:
-            if target in _normalize(opcion):
-                return opcion
+        for _entera, corto in candidatas:
+            if _normalize(corto) == target:
+                return corto
+        for _entera, corto in candidatas:
+            if _normalize(corto).endswith(target):
+                return corto
+        for _entera, corto in candidatas:
+            if target in _normalize(corto):
+                return corto
 
     debug_print("    [WARN] '%s' no figura entre las opciones de %s" % (wanted, knob_name))
     return None
@@ -718,6 +923,26 @@ def configure_node(node, spec):
             )
             motivo = "the project OCIO config has no '%s' colorspace" % wanted
             ok = False
+
+    # Un archivo vacio, corrupto o inexistente deja el nodo con error y sin
+    # ningun aviso: los setValue de arriba salen bien igual, porque el knob
+    # acepta cualquier ruta. Se mira DESPUES de configurar todo.
+    try:
+        con_error = bool(node.hasError())
+    except Exception as e:
+        con_error = False
+        debug_print("    [WARN] No se pudo leer hasError del nodo: %s" % e)
+    if con_error:
+        debug_print(
+            "    [ERROR] El nodo %s quedo con error: no pudo cargar '%s'."
+            % (node.name(), os.path.basename(str(spec["file"])))
+        )
+        aviso_archivo = "%s could not load '%s'" % (
+            node.name(),
+            os.path.basename(str(spec["file"])),
+        )
+        motivo = aviso_archivo if not motivo else "%s\n    %s" % (motivo, aviso_archivo)
+        ok = False
 
     return ok, motivo
 
@@ -1061,11 +1286,22 @@ def _main_interno():
 
     debug_print("  [PLAN SEGUN EL AMF]")
     plan = build_effect_plan(look_dir, amf_path)
+
+    # Un .cube solo entra cuando el shot no trae .amf, .cdl ni .clf: ver el
+    # header. Con un .amf cuyo plan quedo vacio (todo ya aplicado) NO se cae al
+    # .cube: el .amf manda y dice que no hay nada que hacer.
+    if not plan and not has_primary_look_files(look_dir):
+        cube_path, cancelado = pick_cube(look_dir)
+        if cancelado:
+            return
+        if cube_path:
+            plan = build_cube_plan(cube_path)
+
     if not plan:
         _aviso(
             titulo,
             "Nothing to apply.\n\n"
-            "The look files live in <shot>/%s/%s (.amf, .cdl and .clf)."
+            "The look files live in <shot>/%s/%s (.amf, .cdl, .clf and .cube)."
             % (INPUT_DIR_NAME, LOOK_DIR_NAME),
         )
         return
@@ -1148,15 +1384,15 @@ def _main_interno():
         nuke.Undo().end()
 
     # La cadena quedo creada, pero si algun nodo no pudo tomar su working space
-    # el look sale MAL. Callarlo es el peor final: el usuario ve los nodos en el
+    # o no pudo cargar su archivo el look sale MAL. Callarlo es el peor final: el usuario ve los nodos en el
     # Node Graph y da por hecho que estan bien.
     if avisos:
         _aviso(
             titulo,
             "The color chain was created, but it is NOT correct:\n\n"
             "    %s\n\n"
-            "The nodes kept their default working space, so the look is being "
-            "applied in the wrong color space." % "\n    ".join(avisos),
+            "Check the nodes before using them: the look is not being applied "
+            "as intended." % "\n    ".join(avisos),
         )
 
 

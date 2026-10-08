@@ -1,21 +1,24 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF_Dialogs v1.04 | Lega
+  LGA_ApplyAMF_Dialogs v1.05 | Lega
 
   Los dos carteles de LGA_ApplyAMF: elegir el plate y elegir que hacer
   con la cadena. Van en su propio modulo porque LGA_ApplyAMF.py es
   logica pura (sin Qt) y estos dos dialogos son la unica parte de la
   tool que necesita PySide.
 
+  v1.05: El cartel de eleccion tambien sirve para los .cube: pick_plate
+         recibe la extension (".amf" por default) y titulo, subtitulo y hint
+         nombran el tipo de archivo (AMF o LUT). No es una ventana nueva.
   v1.04: El cartel de acciones se llama "AMF", como la entrada del menu.
   v1.03: El cartel de eleccion habla de .amf y no de plates. Decia
          "This shot has more than one plate", y lo que dispara el cartel
          no es la cantidad de plates del shot -puede haber muchos y un
          solo .amf- sino la cantidad de .amf que hay en Look_Files.
 
-  pick_plate(parent, entries) -> entry|None
-      Cartel 1. Filas numeradas, una por plate (scan_amf_entries). Elegir
+  pick_plate(parent, entries, extension=".amf") -> entry|None
+      Cartel 1. Filas numeradas, una por plate (scan_look_entries). Elegir
       con la tecla o con click confirma al toque -no hay boton de accion,
       la fila ES la accion-. Si hay un solo plate no se muestra cartel:
       se devuelve directo. Esc o cerrar la ventana cancela (None).
@@ -216,6 +219,14 @@ def _match_button_widths(*buttons):
 # Cartel 1: elegir el plate
 # ============================
 
+# Textos del cartel segun el tipo de archivo que se elige: (nombre corto para
+# el titulo, extension para las frases). Cualquier extension que no figure
+# cae en el de .amf.
+_PICK_KIND_TEXT = {
+    ".amf": ("AMF", ".amf"),
+    ".cube": ("LUT", ".cube"),
+}
+
 
 class _RowWidget(QtWidgets.QWidget):
     """Una fila clickeable con badge + nombre. El click y el Enter/tecla
@@ -250,14 +261,17 @@ class _RowWidget(QtWidgets.QWidget):
 
 
 class _PickPlateDialog(QtWidgets.QDialog):
-    def __init__(self, parent, entries):
+    def __init__(self, parent, entries, extension=".amf"):
         super(_PickPlateDialog, self).__init__(parent)
         self.selected_entry = None
         self._entries = entries
+        self._kind_name, self._kind_ext = _PICK_KIND_TEXT.get(
+            extension, _PICK_KIND_TEXT[".amf"]
+        )
         self._height_fitted = False
         self._rows = []
 
-        self.setWindowTitle("Select AMF")
+        self.setWindowTitle("Select %s" % self._kind_name)
         self.setModal(True)
         self.setStyleSheet(Style.FORM)
         self.setMinimumWidth(Metric.DIALOG_MIN_WIDTH)
@@ -278,12 +292,13 @@ class _PickPlateDialog(QtWidgets.QDialog):
         )
         root.setSpacing(Metric.SPACING + 4)
 
-        title = QtWidgets.QLabel("Select AMF", self)
+        title = QtWidgets.QLabel("Select %s" % self._kind_name, self)
         title.setProperty("lgaTitle", True)
         root.addWidget(title)
 
         subtitle = QtWidgets.QLabel(
-            "This shot has more than one .amf. Choose which one to apply.",
+            "This shot has more than one %s. Choose which one to apply."
+            % self._kind_ext,
             self,
         )
         subtitle.setWordWrap(True)
@@ -315,12 +330,13 @@ class _PickPlateDialog(QtWidgets.QDialog):
         shortcut_count = min(9, len(self._entries))
         hint = _make_hint_label(
             "Press <span style='color:%s'><b>1</b></span>-"
-            "<span style='color:%s'><b>%d</b></span> to choose an .amf.<br/>"
+            "<span style='color:%s'><b>%d</b></span> to choose a %s file.<br/>"
             "Press <span style='color:%s'><b>Esc</b></span> to cancel."
             % (
                 Color.ACCENT_HOVER,
                 Color.ACCENT_HOVER,
                 shortcut_count,
+                self._kind_ext,
                 Color.ACCENT_HOVER,
             ),
             self,
@@ -368,8 +384,10 @@ def _plate_label(entry):
     return "%s v%03d" % (entry["plate"], entry["version"])
 
 
-def pick_plate(parent, entries):
+def pick_plate(parent, entries, extension=".amf"):
     """Cartel 1. Devuelve la entrada elegida, o None si se cancelo.
+
+    `extension` ('.amf' o '.cube') solo cambia los textos del cartel.
 
     Con 0 o 1 entradas no hay nada que elegir: se devuelve directo y el
     cartel no se llega a construir.
@@ -379,7 +397,7 @@ def pick_plate(parent, entries):
     if len(entries) == 1:
         return entries[0]
 
-    dialog = _PickPlateDialog(parent, entries)
+    dialog = _PickPlateDialog(parent, entries, extension)
     if dialog.exec_() == QtWidgets.QDialog.Accepted:
         return dialog.selected_entry
     return None

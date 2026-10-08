@@ -172,10 +172,10 @@ This section groups tools to build setups, edit knobs or speed up repetitive tas
 
 
 
-## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.14 | Lega
+## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.15 | Lega
 
 Builds the color chain declared by the shot's **.amf** file, which lives next to the plate in `_input/Look_Files`.<br>
-Creates only the transforms the .amf marks as not applied, and inserts them below the selected node. Each node gets the working space that part of the chain runs in: ACES2065-1 by default, or whatever the .amf declares -ACEScct for the CDL-. If the shot has several plates, it asks which one to apply, and it can optionally leave a separate copy assigned as the Viewer's Input Process.
+Creates only the transforms the .amf marks as not applied, and inserts them below the selected node. Each node gets the working space that part of the chain runs in: ACES2065-1 by default, or whatever the .amf declares -ACEScct for the CDL-. If the shot has several plates, it asks which one to apply, and it can optionally leave a separate copy assigned as the Viewer's Input Process. If the shot has no .amf, .cdl or .clf but has a **.cube** LUT, it applies that LUT; its working space comes from the file name (ACEScct, ACEScc, ACEScg, ACES2065-1) and defaults to ACEScct.
 
 <br>
 
