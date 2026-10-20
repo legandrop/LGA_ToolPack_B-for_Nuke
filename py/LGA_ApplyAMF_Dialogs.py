@@ -1,13 +1,15 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF_Dialogs v1.05 | Lega
+  LGA_ApplyAMF_Dialogs v1.06 | Lega
 
   Los dos carteles de LGA_ApplyAMF: elegir el plate y elegir que hacer
   con la cadena. Van en su propio modulo porque LGA_ApplyAMF.py es
   logica pura (sin Qt) y estos dos dialogos son la unica parte de la
   tool que necesita PySide.
 
+  v1.06: El cartel de eleccion tambien nombra los .csp (titulo LUT), que
+         LGA_ApplyAMF ofrece cuando Look_Files trae mas de uno.
   v1.05: El cartel de eleccion tambien sirve para los .cube: pick_plate
          recibe la extension (".amf" por default) y titulo, subtitulo y hint
          nombran el tipo de archivo (AMF o LUT). No es una ventana nueva.
@@ -225,6 +227,7 @@ def _match_button_widths(*buttons):
 _PICK_KIND_TEXT = {
     ".amf": ("AMF", ".amf"),
     ".cube": ("LUT", ".cube"),
+    ".csp": ("LUT", ".csp"),
 }
 
 
@@ -387,7 +390,7 @@ def _plate_label(entry):
 def pick_plate(parent, entries, extension=".amf"):
     """Cartel 1. Devuelve la entrada elegida, o None si se cancelo.
 
-    `extension` ('.amf' o '.cube') solo cambia los textos del cartel.
+    `extension` ('.amf', '.cube' o '.csp') solo cambia los textos del cartel.
 
     Con 0 o 1 entradas no hay nada que elegir: se devuelve directo y el
     cartel no se llega a construir.

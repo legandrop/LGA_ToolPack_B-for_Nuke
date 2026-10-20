@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.11
+
+- **AMF le da prioridad a un `.csp` sobre todo lo demas.** Algunos shows mandan el look del shot como un LUT `.csp` en `Look_Files`, y la tool no lo reconocia. Ahora, si hay un `.csp`, la cadena es ese archivo solo, en un `OCIOFileTransform` con interpolation `linear` y working space `ACEScg` fijos, sin buscar `.amf`, `.cdl`, `.clf` ni `.cube`. Con varios `.csp` se toma la version mas alta de cada uno y, si quedan varios, pregunta el cartel de eleccion. `LGA_ApplyAMF v0.17`, `LGA_ApplyAMF_Dialogs v1.06`. [ AMF - Prioridad del csp ]
+
 ## v1.10
 
 - **AMF reconoce las versiones de un `.cube` con `_V` mayúscula.** `PROJA_LMT_V003.cube` quedaba como un LUT aparte en vez de agruparse con las otras versiones del mismo. La expresión ahora ignora mayúsculas, igual que en el Apply AMF de NKS. Sin cambio de versión: corrige el v0.16 aún sin publicar. [ AMF - Versiones de .cube en mayúscula ]

@@ -1,9 +1,13 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.16 | Lega
+  LGA_ApplyAMF v0.17 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
+
+  Un .csp en Look_Files le gana a todo: si hay uno, se carga SOLO ese en un
+  OCIOFileTransform (interpolation linear, working space ACEScg) y no se
+  mira ningun .amf, .cdl, .clf ni .cube.
 
   Es la contraparte en Nuke del boton Apply AMF de HieroTools, que hace
   lo mismo con soft effects sobre los clips del timeline. Aca no hace
@@ -62,6 +66,11 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.17: Un .csp en Look_Files tiene prioridad sobre todo lo demas: si
+         existe, la cadena es ese .csp solo, en un OCIOFileTransform con
+         interpolation linear y working space ACEScg fijos, y no se busca
+         .amf, .cdl, .clf ni .cube. Con varios .csp se agrupan por version y,
+         si quedan varios, el cartel de eleccion pregunta, como con los .cube.
   v0.16: Con un .cdl suelto y un .cube se aplican LOS DOS (CDL arriba, LMT
          abajo). Antes el .cube solo entraba si Look_Files no tenia ningun
          .cdl, .clf ni .amf. Ahora el plan fijo sin .amf es .cdl + LMT, donde
@@ -182,6 +191,15 @@ _CUBE_SPACE_RE = re.compile(
     r"(?<![a-z0-9])(%s)(?![a-z])"
     % "|".join(sorted(_CUBE_SPACE_HINTS, key=len, reverse=True))
 )
+
+# Un .csp (LUT de Cinespace) en Look_Files es el look completo del shot y le
+# gana a todo: si hay uno, se carga ese solo y no se busca .amf, .cdl, .clf ni
+# .cube. Decision de Lega: los shows que mandan .csp lo arman para correr en
+# ACEScg con interpolacion lineal, asi que esos dos valores van fijos y no se
+# deducen del nombre como en el .cube.
+CSP_EXTENSION = ".csp"
+CSP_WORKING_SPACE = "ACEScg"
+CSP_INTERPOLATION = "linear"
 
 # La corrida SIEMPRE deja su log, este o no prendido el debug por consola. Sin
 # esto la tool es una caja negra: si no hace nada, no hay donde mirar por que.
@@ -389,9 +407,9 @@ def scan_look_entries(look_dir, extension):
     archivos cuyo nombre no matchea el patron se ofrecen igual, cada uno como
     su propia entrada, para no esconderlos.
 
-    Sirve para .amf y para .cube. En un .amf el token anterior a '_vNNN' es el
-    plate; en un .cube se agrupa por el nombre entero sin el '_vNNN' final (ver
-    parse_lut_name).
+    Sirve para .amf, .cube y .csp. En un .amf el token anterior a '_vNNN' es el
+    plate; en un LUT (.cube, .csp) se agrupa por el nombre entero sin el
+    '_vNNN' final (ver parse_lut_name).
 
     Devuelve una lista de dicts {plate, version, path, name}, ordenada por
     nombre de plate.
@@ -413,7 +431,7 @@ def scan_look_entries(look_dir, extension):
     sueltos = []
     for path in sorted(amf_files):
         nombre = os.path.basename(path)
-        if extension == CUBE_EXTENSION:
+        if extension in (CUBE_EXTENSION, CSP_EXTENSION):
             plate, version = parse_lut_name(nombre)
         else:
             plate, version = parse_plate_name(nombre)
@@ -763,31 +781,47 @@ def cube_working_space(cube_path):
     return espacios[0], "nombre"
 
 
-def pick_cube(look_dir):
-    """Elige el .cube a usar. Devuelve (ruta, cancelado).
+def pick_lut(look_dir, extension=CUBE_EXTENSION):
+    """Elige el LUT (.cube o .csp) a usar. Devuelve (ruta, cancelado).
 
-    Con uno solo no se pregunta. Con varios se agrupan por plate y version
+    Con uno solo no se pregunta. Con varios se agrupan por nombre y version
     (scan_look_entries) y, si queda mas de uno, se reutiliza el cartel de
-    eleccion de los .amf. Sin ningun .cube devuelve (None, False).
+    eleccion de los .amf. Sin ninguno de esa extension devuelve (None, False).
     """
-    entradas = scan_look_entries(look_dir, CUBE_EXTENSION)
-    debug_print("  .cube encontrados    : %d" % len(entradas))
+    entradas = scan_look_entries(look_dir, extension)
+    debug_print("  %s encontrados    : %d" % (extension, len(entradas)))
     for entrada in entradas:
         debug_print("      %s (v%s)" % (entrada["plate"], entrada["version"]))
     if not entradas:
         return None, False
     if len(entradas) == 1:
-        debug_print("  [INFO] Un solo .cube, se usa sin preguntar.")
+        debug_print("  [INFO] Un solo %s, se usa sin preguntar." % extension)
         return entradas[0]["path"], False
 
     from LGA_ApplyAMF_Dialogs import pick_plate
 
-    elegido = pick_plate(None, entradas, extension=CUBE_EXTENSION)
+    elegido = pick_plate(None, entradas, extension=extension)
     if elegido is None:
-        debug_print("  [INFO] El usuario cancelo la eleccion del .cube.")
+        debug_print("  [INFO] El usuario cancelo la eleccion del %s." % extension)
         return None, True
-    debug_print("  [INFO] .cube elegido: %s" % elegido["name"])
+    debug_print("  [INFO] %s elegido: %s" % (extension, elegido["name"]))
     return elegido["path"], False
+
+
+def csp_spec(csp_path):
+    """El .csp como unico eslabon: OCIOFileTransform en ACEScg, interpolacion lineal."""
+    debug_print(
+        "    [APLICAR] CSP -> %s (working space: %s, interpolation: %s, fijos)"
+        % (os.path.basename(csp_path), CSP_WORKING_SPACE, CSP_INTERPOLATION)
+    )
+    return {
+        "type": "OCIOFileTransform",
+        "file": _slash(csp_path),
+        "cccid": None,
+        "working_space": CSP_WORKING_SPACE,
+        "interpolation": CSP_INTERPOLATION,
+        "label": "LUT",
+    }
 
 
 def cube_spec(cube_path):
@@ -915,6 +949,8 @@ def configure_node(node, spec):
             debug_print("    [WARN] Sin cccid: el nodo toma la primera correccion del archivo.")
     else:
         ok = _set_knob(node, "file", spec["file"]) and ok
+        if spec.get("interpolation"):
+            ok = _set_knob(node, "interpolation", spec["interpolation"]) and ok
 
     # El working space sale del .amf, o de AMF_WORKING_SPACE si el .amf no lo
     # declara. El default del nodo, `scene_linear`, es un rol que en los configs
@@ -1237,6 +1273,52 @@ def _aviso(titulo, texto):
         nuke.message(texto)
 
 
+def _plan_sin_csp(look_dir):
+    """El plan cuando Look_Files no trae .csp. Devuelve (plan, cancelado).
+
+    Elige el .amf (por plate) o, sin .amf, el .cube que acompana al .cdl, y arma
+    el plan con build_effect_plan. Puede abrir el cartel de eleccion.
+    """
+    # ---- Que plate ----
+    entradas = scan_amf_entries(look_dir)
+    debug_print("  amf encontrados      : %d" % len(entradas))
+    for entrada in entradas:
+        debug_print("      %s (v%s)" % (entrada["plate"], entrada["version"]))
+
+    amf_path = None
+    if len(entradas) == 1:
+        # Un solo plate: no hay nada que preguntar.
+        amf_path = entradas[0]["path"]
+        debug_print("  [INFO] Un solo .amf, se usa sin preguntar.")
+    elif len(entradas) > 1:
+        from LGA_ApplyAMF_Dialogs import pick_plate
+
+        elegido = pick_plate(None, entradas)
+        if elegido is None:
+            debug_print("  [INFO] El usuario cancelo la eleccion de plate.")
+            return [], True
+        amf_path = elegido["path"]
+        debug_print("  [INFO] Plate elegido: %s" % elegido["name"])
+
+    # El .cube es el LMT cuando no hay .amf (manda el .amf) ni .clf (el .clf y el
+    # .cube son los dos LMT: se aplica uno solo, y el .clf gana). Se elige ACA y
+    # no adentro del plan porque con varios .cube puede abrir el cartel de
+    # eleccion. Con un .amf cuyo plan queda vacio (todo ya aplicado) NO se cae al
+    # .cube: el .amf manda y dice que no hay nada que hacer.
+    cube_path = None
+    if not entradas:
+        if has_look_file(look_dir, ".clf"):
+            if has_look_file(look_dir, CUBE_EXTENSION):
+                debug_print("  [INFO] Hay .clf y .cube: se usa el .clf como LMT.")
+        else:
+            cube_path, cancelado = pick_lut(look_dir, CUBE_EXTENSION)
+            if cancelado:
+                return [], True
+
+    debug_print("  [PLAN SEGUN EL AMF]")
+    return build_effect_plan(look_dir, amf_path, cube_path), False
+
+
 def _main_interno():
     debug_print("=" * 70)
     debug_print("  LGA_ApplyAMF - cadena de color segun el .amf del shot")
@@ -1277,50 +1359,25 @@ def _main_interno():
         )
         return
 
-    # ---- Que plate ----
-    entradas = scan_amf_entries(look_dir)
-    debug_print("  amf encontrados      : %d" % len(entradas))
-    for entrada in entradas:
-        debug_print("      %s (v%s)" % (entrada["plate"], entrada["version"]))
-
-    amf_path = None
-    if len(entradas) == 1:
-        # Un solo plate: no hay nada que preguntar.
-        amf_path = entradas[0]["path"]
-        debug_print("  [INFO] Un solo .amf, se usa sin preguntar.")
-    elif len(entradas) > 1:
-        from LGA_ApplyAMF_Dialogs import pick_plate
-
-        elegido = pick_plate(None, entradas)
-        if elegido is None:
-            debug_print("  [INFO] El usuario cancelo la eleccion de plate.")
+    # ---- Un .csp le gana a todo ----
+    # Si Look_Files trae un .csp, ese es el look del shot y se aplica solo: no
+    # se mira ningun .amf, .cdl, .clf ni .cube.
+    csp_path, cancelado = pick_lut(look_dir, CSP_EXTENSION)
+    if cancelado:
+        return
+    if csp_path:
+        debug_print("  [PLAN] Hay .csp: se usa solo ese, sin buscar nada mas.")
+        plan = [csp_spec(csp_path)]
+    else:
+        plan, cancelado = _plan_sin_csp(look_dir)
+        if cancelado:
             return
-        amf_path = elegido["path"]
-        debug_print("  [INFO] Plate elegido: %s" % elegido["name"])
-
-    # El .cube es el LMT cuando no hay .amf (manda el .amf) ni .clf (el .clf y el
-    # .cube son los dos LMT: se aplica uno solo, y el .clf gana). Se elige ACA y
-    # no adentro del plan porque con varios .cube puede abrir el cartel de
-    # eleccion. Con un .amf cuyo plan queda vacio (todo ya aplicado) NO se cae al
-    # .cube: el .amf manda y dice que no hay nada que hacer.
-    cube_path = None
-    if not entradas:
-        if has_look_file(look_dir, ".clf"):
-            if has_look_file(look_dir, CUBE_EXTENSION):
-                debug_print("  [INFO] Hay .clf y .cube: se usa el .clf como LMT.")
-        else:
-            cube_path, cancelado = pick_cube(look_dir)
-            if cancelado:
-                return
-
-    debug_print("  [PLAN SEGUN EL AMF]")
-    plan = build_effect_plan(look_dir, amf_path, cube_path)
 
     if not plan:
         _aviso(
             titulo,
             "Nothing to apply.\n\n"
-            "The look files live in <shot>/%s/%s (.amf, .cdl, .clf and .cube)."
+            "The look files live in <shot>/%s/%s (.csp, .amf, .cdl, .clf and .cube)."
             % (INPUT_DIR_NAME, LOOK_DIR_NAME),
         )
         return

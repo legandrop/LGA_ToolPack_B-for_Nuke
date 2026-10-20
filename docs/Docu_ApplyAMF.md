@@ -11,6 +11,7 @@ La tool NO es un toggle: cada corrida crea nodos nuevos debajo del nodo seleccio
 
 | Archivo | Nodo | De donde sale el working space |
 |---|---|---|
+| `.csp` | `OCIOFileTransform`, y nada mas | fijo: ACEScg, con `interpolation=linear` (ver abajo) |
 | `.amf` | uno por cada `lookTransform` con `applied="false"` | del propio `.amf`; si no declara, ACES2065-1 |
 | `.cdl` | `OCIOCDLTransform` | del `<cdlWorkingSpace>` del `.amf`; sin `.amf`, el default del nodo |
 | `.clf` | `OCIOFileTransform` | ACES2065-1 (un LMT `.clf` entra y sale en AP0) |
@@ -18,6 +19,7 @@ La tool NO es un toggle: cada corrida crea nodos nuevos debajo del nodo seleccio
 
 ## Prioridad entre formatos
 
+0. **Un `.csp` le gana a todo.** Si `Look_Files` trae un `.csp` (LUT de Cinespace), la cadena es ese archivo solo, en un `OCIOFileTransform` con working space `ACEScg` e `interpolation=linear`, y no se busca ningun `.amf`, `.cdl`, `.clf` ni `.cube`. Los dos valores son fijos por decision de Lega: los shows que mandan el look como `.csp` lo arman para correr en ACEScg, y el nombre del archivo no se usa para deducir nada (a diferencia del `.cube`). Con varios `.csp` se agrupan igual que los `.cube` (`parse_lut_name`) y, si queda mas de uno, pregunta el mismo cartel de eleccion. El resto de esta lista vale solo cuando NO hay `.csp`.
 1. **El `.amf` manda.** Si hay uno, el plan sale de el: orden, `applied`, working space y archivos. El `.cdl` es el hermano del `.amf` elegido.
 2. Sin `.amf`, plan fijo por extension: el `.cdl` suelto (si hay) y despues UN LMT. El LMT es el `.clf` si existe y, si no, el `.cube`. El orden en el arbol es el de siempre: CDL arriba, LMT abajo, cada uno colgado del anterior (el primero, del nodo seleccionado). Con varios `.cdl` o `.clf` se usa el primero, con aviso en el log.
 3. **Nunca un `.clf` y un `.cube` juntos.** Los dos son el LMT del shot: aplicar los dos dobla el look. Si hay `.cdl` + `.clf` + `.cube`, salen el CDL y el CLF y el `.cube` se ignora (queda anotado en el log). Un `.cdl` suelto y un `.cube`, en cambio, se aplican LOS DOS: son capas distintas (grade y look), no el mismo eslabon.
@@ -58,15 +60,17 @@ El `OCIOFileTransform` queda con `interpolation=linear` (el default del nodo), i
 ## Referencias tecnicas
 
 - `C:\Users\leg4-pc\.nuke\LGA_ToolPack-B\py\LGA_ApplyAMF.py`
-  - `_main_interno`: flujo completo; la rama del `.cube` va despues de `build_effect_plan`.
+  - `_main_interno`: flujo completo; busca primero el `.csp` (`pick_lut` + `csp_spec`) y, si no hay, sigue con `_plan_sin_csp`.
+  - `_plan_sin_csp`: eleccion del `.amf` por plate o del `.cube`, y `build_effect_plan`.
+  - `CSP_EXTENSION`, `CSP_WORKING_SPACE`, `CSP_INTERPOLATION`, `csp_spec`: el eslabon unico del `.csp`; `configure_node` setea `interpolation` cuando el spec lo trae.
   - `has_look_file`: decide si hay `.clf` (entonces el `.cube` no entra) o si hay que elegir un `.cube`.
   - `_fallback_plan`, `cube_spec`: el plan fijo sin `.amf` (`.cdl` + LMT) y el eslabon del `.cube`.
   - `scan_look_entries` / `scan_amf_entries`: agrupado por plate y version.
-  - `pick_cube`, `cube_spec`, `cube_working_space`: eleccion del `.cube` y su working space (`_CUBE_SPACE_HINTS`, `CUBE_DEFAULT_SPACE`).
+  - `pick_lut` (`.cube` o `.csp`), `cube_spec`, `cube_working_space`: eleccion del LUT y su working space (`_CUBE_SPACE_HINTS`, `CUBE_DEFAULT_SPACE`).
   - `match_colorspace_option`, `configure_node`: resolucion del nombre corto contra el config OCIO, chequeo de `hasError` y cartel de "NOT correct".
   - `parse_lut_name`: clave de agrupado de los `.cube`.
   - `insert_chain`: ubicacion en el arbol (debajo del nodo seleccionado, reconecta lo que venia abajo).
 - `C:\Users\leg4-pc\.nuke\LGA_ToolPack-B\py\LGA_ApplyAMF_Dialogs.py`
-  - `pick_plate(parent, entries, extension)`, `_PickPlateDialog`: cartel de eleccion, textos segun `.amf` o `.cube`.
+  - `pick_plate(parent, entries, extension)`, `_PickPlateDialog`: cartel de eleccion, textos segun `.amf`, `.cube` o `.csp`.
   - `ask_actions`: crear nodos / crear suelto como Input Process.
 - Contraparte en HieroTools: `C:\Users\leg4-pc\.nuke\Python\Startup\LGA_HieroTools\LGA_NKS_Edit_Panel_py\LGA_NKS_ApplyAMF.py`.
