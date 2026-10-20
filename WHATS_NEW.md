@@ -1,5 +1,9 @@
 # What's new in LGA ToolPack-B
 
+## v1.11 (2026-10-20)
+
+- **Improved:** AMF loads a .csp LUT from the shot's Look_Files folder before anything else: when there is one, it applies only that LUT, with linear interpolation in ACEScg.
+
 ## v1.10 (2026-10-08)
 
 - **Improved:** AMF now applies a .cube LUT from the shot's Look_Files folder: without an .amf it applies the shot's loose .cdl (if any) and then the .cube, or the .clf when there is one.

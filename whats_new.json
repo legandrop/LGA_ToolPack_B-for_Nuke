@@ -4,6 +4,16 @@
   "name": "LGA ToolPack-B",
   "versions": [
     {
+      "version": "1.11",
+      "items": [
+        {
+          "kind": "improved",
+          "text": "AMF loads a .csp LUT from the shot's Look_Files folder before anything else: when there is one, it applies only that LUT, with linear interpolation in ACEScg."
+        }
+      ],
+      "date": "2026-10-20"
+    },
+    {
       "version": "1.10",
       "items": [
         {
