@@ -432,7 +432,7 @@ class ResultsWindow(QWidget):
         # calcula luminancia para elegir blanco o negro
         lum = 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue()
         # Los tres fondos de estado son oscuros, asi que el texto va claro.
-        return Color.TEXT_ON_ACCENT if lum < 128 else Color.WINDOW
+        return Color.TEXT_ON_COLOR if lum < 128 else Color.WINDOW
 
     def adjust_window_size(self):
         # mismo enfoque de ajuste que CompareEXR
