@@ -2,6 +2,8 @@
 
 ## v1.12
 
+- **AMF corrige el colorspace del Read del plate.** En un shot con `.amf`, el CDL se aplicaba bien pero el look no matcheaba con los dailies: el Read del EXR seguia en `default (scene_linear)`, que en los configs ACES es ACEScg, y leia un plate ACES2065-1 (AP0) con el gamut equivocado. Ahora, si el Read del que cuelga la cadena tiene un EXR con cromaticidades AP0 o `acesImageContainerFlag` y otro colorspace, AMF lo pasa a ACES2065-1 dentro del mismo Undo y lo avisa. No toca Reads en `raw` ni EXR que no sean AP0. `LGA_ApplyAMF v0.18`. [ AMF - Corregir el colorspace del Read del plate ]
+
 - **Token para el numero de una lista.** El brief numerado de Shot Marks (HieroTools) necesitaba un gris entre el cuerpo y los titulos para el numero de cada item, y no habia uno neutro: los grises intermedios eran de otros usos (pastilla, texto sobre el violeta). `Color.TEXT_MARKER` lo escribe `_derivados()`, mitad entre `TEXT` y `TEXT_STRONG`, asi vale para los seis temas sin hexes a mano. Regla en `Docu_UI_Style.md`. Sin cambio visible en este pack. `LGA_UI_Style_*` v1.31, igual en las cuatro copias. [ UI - Token TEXT_MARKER ]
 
 - **Los botones violetas escribian en blanco.** Sobre el violeta el texto va en gris claro y el blanco es solo del hover, pero `Style.BTN_PRIMARY` usaba `TEXT_ON_ACCENT` (`#FFFFFF`) en los dos estados y el hover no tenia a donde subir. `TEXT_ON_ACCENT` pasa a `#D0D0D0` en los seis temas, `TEXT_ON_ACCENT_HOVER` es el blanco del hover y `TEXT_ON_COLOR` conserva el blanco para texto sobre colores que no son el violeta (datos, la cruz roja): lo usa `LGA_CopyCat_Cleaner`, sin cambio visible. Regla escrita en `Docu_UI_Style.md` y en `AGENTS.md`. `LGA_UI_Style_*` v1.30, igual en las cuatro copias. [ UI - Texto gris sobre el violeta ]

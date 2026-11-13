@@ -10,6 +10,9 @@ platforms: [win, mac]
 
 ## Unreleased
 
+## v1.12
+- [fixed] AMF pasa a ACES2065-1 el Read del plate cuando lee un EXR ACES con otro colorspace, y te avisa: antes el look no coincidía con los dailies aunque el CDL estuviera bien.
+
 ## v1.11
 - [improved] AMF loads a .csp LUT from the shot's Look_Files folder before anything else: when there is one, it applies only that LUT, with linear interpolation in ACEScg.
 

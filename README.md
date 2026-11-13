@@ -172,11 +172,11 @@ This section groups tools to build setups, edit knobs or speed up repetitive tas
 
 
 
-## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.17 | Lega
+## <img src="Doc_Media/image5.png" alt="" width="6" height="16" style="margin-right:3px;"> AMF v0.18 | Lega
 
 Builds the color chain declared by the shot's **.amf** file, which lives next to the plate in `_input/Look_Files`.<br>
 If that folder has a **.csp** LUT, it wins over everything else: AMF loads only the .csp, with linear interpolation and ACEScg working space, and ignores any .amf, .cdl, .clf or .cube.<br>
-Creates only the transforms the .amf marks as not applied, and inserts them below the selected node. Each node gets the working space that part of the chain runs in: ACES2065-1 by default, or whatever the .amf declares -ACEScct for the CDL-. If the shot has several plates, it asks which one to apply, and it can optionally leave a separate copy assigned as the Viewer's Input Process. Without an .amf it applies the shot's loose .cdl, if any, plus one LUT: the .clf or, if there is none, the **.cube**; never both. A .cube's working space comes from the file name (ACEScct, ACEScc, ACEScg, ACES2065-1) and defaults to ACEScct.
+Creates only the transforms the .amf marks as not applied, and inserts them below the selected node. If the plate's Read is loading an ACES2065-1 EXR with another colorspace, AMF switches it to ACES2065-1 and tells you. Each node gets the working space that part of the chain runs in: ACES2065-1 by default, or whatever the .amf declares -ACEScct for the CDL-. If the shot has several plates, it asks which one to apply, and it can optionally leave a separate copy assigned as the Viewer's Input Process. Without an .amf it applies the shot's loose .cdl, if any, plus one LUT: the .clf or, if there is none, the **.cube**; never both. A .cube's working space comes from the file name (ACEScct, ACEScc, ACEScg, ACES2065-1) and defaults to ACEScct.
 
 <br>
 

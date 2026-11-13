@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_ApplyAMF v0.17 | Lega
+  LGA_ApplyAMF v0.18 | Lega
 
   Crea en el Node Graph la cadena de color que declara el .amf del shot.
 
@@ -66,6 +66,11 @@ ____________________________________________________________________
         PROJA_1013_0800_VND_cbPlate_v004.amf
         PROJA_1013_0800_VND_cbPlate_v004.cdl
 
+  v0.18: Si el Read del que cuelga la cadena lee un EXR ACES2065-1 (AP0 en el
+         header) con otro colorspace, lo pasa a ACES2065-1 dentro del mismo
+         Undo y lo avisa en un cartel. Con el default scene_linear (ACEScg en
+         los configs ACES) el plate entraba con el gamut equivocado y el CDL no
+         matcheaba. No toca un Read en raw ni uno cuyo header no diga AP0.
   v0.17: Un .csp en Look_Files tiene prioridad sobre todo lo demas: si
          existe, la cadena es ese .csp solo, en un OCIOFileTransform con
          interpolation linear y working space ACEScg fijos, y no se busca
@@ -1257,6 +1262,118 @@ def _centrar_en_el_hueco(nodos, anchor, siguiente):
 
 
 # ============================
+# Colorspace del Read del plate
+# ============================
+
+# Cromaticidades AP0 (rojo, verde, azul; el punto blanco no hace falta). Un EXR
+# ACES2065-1 las declara en su header, y casi siempre ademas el
+# acesImageContainerFlag. Cualquiera de las dos alcanza.
+_AP0_PRIMARIES = (0.7347, 0.2653, 0.0, 1.0, 0.0001, -0.0770)
+_AP0_TOLERANCIA = 1e-3
+
+# Cuantos nodos se sube por el input 0 buscando el Read. Alcanza para un ancla
+# que cuelga de un Reformat, un Crop o un Dot; mas arriba ya no es "el plate".
+_MAX_SUBIDA_READ = 25
+
+
+def find_upstream_read(anchor):
+    """El Read del que viene el ancla, subiendo por el input 0. None si no hay."""
+    node = anchor
+    for _ in range(_MAX_SUBIDA_READ):
+        if node is None:
+            return None
+        if node.Class() == "Read":
+            return node
+        try:
+            node = node.input(0)
+        except Exception:
+            return None
+    return None
+
+
+def _es_exr_aces2065(read):
+    """True si el header del EXR dice que la imagen esta en ACES2065-1 (AP0)."""
+    try:
+        metadata = read.metadata() or {}
+    except Exception as e:
+        debug_print("  [WARN] No se pudo leer la metadata de %s: %s" % (read.name(), e))
+        return False
+
+    flag = metadata.get("exr/acesImageContainerFlag")
+    try:
+        if flag is not None and int(flag) == 1:
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    chroma = metadata.get("exr/chromaticities")
+    try:
+        valores = [float(v) for v in chroma][: len(_AP0_PRIMARIES)]
+    except (TypeError, ValueError):
+        return False
+    if len(valores) != len(_AP0_PRIMARIES):
+        return False
+    return all(
+        abs(v - ref) <= _AP0_TOLERANCIA for v, ref in zip(valores, _AP0_PRIMARIES)
+    )
+
+
+def fix_read_colorspace(anchor):
+    """Pone el Read del plate en ACES2065-1 si su EXR es AP0 y el Read dice otra cosa.
+
+    La cadena del .amf da por hecho que el plate entra en ACES2065-1. Un Read
+    que se quedo en el default (`scene_linear`, que en los configs ACES es
+    ACEScg) lee AP0 como si fuera AP1: los colores salen corridos ANTES del CDL
+    y ningun look matchea. No se toca un Read en `raw` (es una decision del
+    usuario) ni uno cuyo header no diga AP0.
+
+    Devuelve (nota, aviso): `nota` es el texto para el usuario si se cambio el
+    Read; `aviso`, si habia que cambiarlo y no se pudo. Los dos pueden ser None.
+    """
+    read = find_upstream_read(anchor)
+    if read is None:
+        debug_print("  read del plate       : <ninguno arriba del ancla>")
+        return None, None
+    debug_print("  read del plate       : %s" % read.name())
+
+    try:
+        if read["raw"].value():
+            debug_print("  [INFO] %s esta en raw: no se toca su colorspace." % read.name())
+            return None, None
+    except Exception:
+        pass
+
+    if not _es_exr_aces2065(read):
+        debug_print("  [INFO] El header de %s no dice ACES2065-1: no se toca." % read.name())
+        return None, None
+
+    actual = str(read["colorspace"].value())
+    if "aces20651" in _normalize(actual):
+        debug_print("  [OK] %s ya esta en %s." % (read.name(), actual))
+        return None, None
+
+    opcion = match_colorspace_option(read, "colorspace", AMF_WORKING_SPACE)
+    if not opcion:
+        debug_print(
+            "  [ERROR] %s es ACES2065-1 y el config no expone ese colorspace."
+            % read.name()
+        )
+        return None, (
+            "%s is an ACES2065-1 EXR but the project OCIO config has no "
+            "'%s' colorspace to read it with" % (read.name(), AMF_WORKING_SPACE)
+        )
+
+    if not _set_knob(read, "colorspace", opcion):
+        return None, "%s could not be set to '%s'" % (read.name(), opcion)
+
+    debug_print("  [OK] %s: colorspace '%s' -> '%s'" % (read.name(), actual, opcion))
+    return (
+        "%s was reading an ACES2065-1 EXR as '%s'.\nIt is now set to '%s'."
+        % (read.name(), actual, opcion)
+    ), None
+
+
+# ============================
 # Entrada
 # ============================
 
@@ -1400,10 +1517,20 @@ def _main_interno():
     # muestran en UN cartel al final, ya cerrado el Undo: primero se termina el
     # trabajo sobre el Node Graph, despues se le habla al usuario.
     avisos = []
+    notas = []
     nuke.Undo().begin("AMF")
     try:
         # El ancla se resuelve ANTES de deseleccionar: es el nodo seleccionado.
         anchor, no_op = get_anchor_node()
+
+        # El Read del plate tiene que leer el EXR en el espacio en el que esta,
+        # o la cadena corre sobre colores corridos. Va dentro del mismo Undo.
+        if not no_op:
+            nota, aviso = fix_read_colorspace(anchor)
+            if nota:
+                notas.append(nota)
+            if aviso:
+                avisos.append(aviso)
 
         for node in nuke.allNodes():
             try:
@@ -1462,14 +1589,26 @@ def _main_interno():
     # La cadena quedo creada, pero si algun nodo no pudo tomar su working space
     # o no pudo cargar su archivo el look sale MAL. Callarlo es el peor final: el usuario ve los nodos en el
     # Node Graph y da por hecho que estan bien.
+    texto_notas = "\n\n".join(notas)
     if avisos:
         _aviso(
             titulo,
             "The color chain was created, but it is NOT correct:\n\n"
             "    %s\n\n"
             "Check the nodes before using them: the look is not being applied "
-            "as intended." % "\n    ".join(avisos),
+            "as intended.%s"
+            % ("\n    ".join(avisos), "\n\n" + texto_notas if texto_notas else ""),
         )
+    elif notas:
+        # Se cambio un knob de un nodo que el usuario no eligio tocar: se avisa.
+        debug_print("[AVISO AL USUARIO] %s" % texto_notas)
+        try:
+            from LGA_UI_MessageBox_ToolPackB import show_info
+
+            show_info(None, titulo, texto_notas)
+        except Exception as e:
+            debug_print("  [WARN] No se pudo mostrar el cartel: %s" % e)
+            nuke.message(texto_notas)
 
 
 def main():

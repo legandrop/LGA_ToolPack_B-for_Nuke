@@ -26,6 +26,14 @@ La tool NO es un toggle: cada corrida crea nodos nuevos debajo del nodo seleccio
 4. **Con un `.amf` el `.cube` no entra**, aunque haya uno en la carpeta: apilarlo sobre la cadena del `.amf` aplicaria el look dos veces. Con un `.amf` cuyo plan queda vacio (todo ya aplicado en el plate) NO se cae al `.cube`; sale el cartel de "Nothing to apply". Un `.amf` que no se pudo parsear sigue cayendo al plan fijo de antes (`.cdl` + `.clf`, sin `.cube`).
 5. Un `.cube` que un `.amf` nombra en su `<file>` entra por el camino del `.amf` (con ACES2065-1, el espacio de la cadena del `.amf`), no por este.
 
+## Colorspace del Read del plate
+
+La cadena del `.amf` da por hecho que el plate entra en ACES2065-1: el IDT ya viene horneado en el EXR. Si el Read quedo en su default `scene_linear` (en los configs ACES es ACEScg, AP1), lee AP0 como si fuera AP1, los colores salen corridos antes del CDL y el look no matchea con los dailies aunque el CDL este perfecto.
+
+Por eso, antes de crear la cadena, `fix_read_colorspace` sube desde el nodo seleccionado por el input 0 (hasta 25 nodos: Dots, Reformats, Crops) buscando el primer Read. Si el header del EXR dice ACES2065-1 (`exr/acesImageContainerFlag` = 1 o cromaticidades AP0) y el Read tiene otro colorspace, lo pasa a ACES2065-1 (nombre real resuelto con `match_colorspace_option`) dentro del mismo Undo y lo avisa en un cartel de info. No toca un Read en `raw`, uno cuyo header no diga AP0 (un `.mov` Rec.709, un EXR ACEScg) ni nada cuando no hay seleccion (NoOp temporal). Si el config no expone ACES2065-1, el motivo se suma al cartel de "NOT correct".
+
+Ojo con el Input Process: la copia suelta de la cadena se aplica sobre lo que mire el Viewer. Mirar el nodo CDL del comp con el Input Process prendido aplica el CDL dos veces.
+
 ## Varios `.cube`
 
 Se queda la version mas alta de cada LUT (`scan_look_entries`). A diferencia de un `.amf`, donde el token anterior a `_vNNN` es el plate, en un `.cube` ese token no identifica nada: `PROJA_Preview_LMT_v001.cube` y `PROJA_Final_LMT_v001.cube` son dos LUT distintos aunque los dos terminen en `LMT`. Por eso la clave de agrupado es el nombre ENTERO sin el `_vNNN` final (`parse_lut_name`): `X_LMT_v001.cube` y `X_LMT_v002.cube` son una sola entrada (la v002) y los dos anteriores son dos entradas. Los nombres sin `_vNNN` final son cada uno su propia entrada. Si queda una sola, se usa sin preguntar; si quedan varias, el cartel de eleccion de los `.amf` (`pick_plate`) se reutiliza con titulo "Select LUT". No hay ventana nueva. Esc cancela la corrida entera.
@@ -69,6 +77,7 @@ El `OCIOFileTransform` queda con `interpolation=linear` (el default del nodo), i
   - `pick_lut` (`.cube` o `.csp`), `cube_spec`, `cube_working_space`: eleccion del LUT y su working space (`_CUBE_SPACE_HINTS`, `CUBE_DEFAULT_SPACE`).
   - `match_colorspace_option`, `configure_node`: resolucion del nombre corto contra el config OCIO, chequeo de `hasError` y cartel de "NOT correct".
   - `parse_lut_name`: clave de agrupado de los `.cube`.
+  - `fix_read_colorspace`, `find_upstream_read`, `_es_exr_aces2065`: pasa a ACES2065-1 el Read del plate cuando su EXR es AP0 y el Read dice otra cosa.
   - `insert_chain`: ubicacion en el arbol (debajo del nodo seleccionado, reconecta lo que venia abajo).
 - `C:\Users\leg4-pc\.nuke\LGA_ToolPack-B\py\LGA_ApplyAMF_Dialogs.py`
   - `pick_plate(parent, entries, extension)`, `_PickPlateDialog`: cartel de eleccion, textos segun `.amf`, `.cube` o `.csp`.
